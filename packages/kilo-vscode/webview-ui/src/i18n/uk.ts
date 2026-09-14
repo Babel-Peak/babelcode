@@ -299,13 +299,12 @@ export const dict = {
   "session.messages.loadEarlier": "Завантажити попередні повідомлення",
   "session.messages.loading": "Завантаження повідомлень...",
 
-  "sidebar.topBar.label": "Навігація Kilo Code",
+  "sidebar.topBar.label": "Навігація Babel Code",
   "sidebar.topBar.newTask": "Нове завдання",
   "sidebar.topBar.history": "Історія",
   "sidebar.topBar.agentManager": "Agent Manager",
-  "sidebar.topBar.kiloClaw": "KiloClaw",
   "sidebar.topBar.marketplace": "Маркетплейс",
-  "sidebar.topBar.profile": "Профіль",
+  "sidebar.topBar.browser": "Попередній перегляд браузера",
   "sidebar.topBar.settings": "Налаштування",
   "sidebar.session.newSession": "Нова сесія",
   "sidebar.session.newSession.tooltip": "Почати нову розмову, зберігши поточну сесію незмінною.",
@@ -393,7 +392,6 @@ export const dict = {
   "settings.providers.section.connected": "Підключені провайдери",
   "settings.providers.connected.empty": "Підключених провайдерів немає",
   "settings.providers.section.popular": "Популярні провайдери",
-  "settings.providers.tag.gateway": "Gateway",
   "settings.providers.tag.environment": "Середовище",
   "settings.providers.tag.config": "Конфігурація",
   "settings.providers.tag.chatgpt": "ChatGPT",
@@ -577,7 +575,7 @@ export const dict = {
   "deviceAuth.toast.codeCopied": "Код скопійовано до буфера обміну",
   "deviceAuth.toast.errorCopied": "Помилку скопійовано до буфера обміну",
   "deviceAuth.status.initiating": "Ініціалізація входу...",
-  "deviceAuth.title": "Увійти до Kilo Code",
+  "deviceAuth.title": "Увійти до Babel Code",
   "deviceAuth.step1": "Крок 1: Відкрийте цей URL",
   "deviceAuth.action.copyUrl": "Копіювати URL",
   "deviceAuth.action.openBrowser": "Відкрити браузер",
@@ -600,7 +598,7 @@ export const dict = {
 
   "profile.title": "Профіль",
   "profile.notLoggedIn": "Не увійшов",
-  "profile.action.login": "Увійти через Kilo Code",
+  "profile.action.login": "Увійти через Babel Code",
   "profile.balance.title": "Баланс",
   "profile.balance.refresh": "Оновити баланс",
   "profile.usage.title": "Плани та використання",
@@ -703,10 +701,10 @@ export const dict = {
 
   "settings.experimental.title": "Експериментальне",
   "settings.language.title": "Мова",
-  "settings.aboutKiloCode.title": "Про Kilo Code",
+  "settings.aboutKiloCode.title": "Про Babel Code",
 
   "session.messages.welcome":
-    "Kilo Code — це асистент з кодування на базі ШІ. Попросіть його розробити функцію, виправити помилку або пояснити вашу кодову базу.",
+    "Babel Code — це асистент з кодування на базі ШІ. Попросіть його розробити функцію, виправити помилку або пояснити вашу кодову базу.",
   "session.messages.scrollToBottom": "Прокрутити до низу",
   "session.messages.initializing": "Ініціалізація...",
   "session.messages.taskStarting": "Запуск...",
@@ -811,7 +809,7 @@ export const dict = {
   "settings.browser.headless.description": "Запускати в безголовому режимі (без видимого вікна браузера).",
 
   "settings.language.description":
-    '"Автоматично" використовує мову відображення VS Code. Виберіть мову для інтерфейсу Kilo Code.',
+    '"Автоматично" використовує мову відображення VS Code. Виберіть мову для інтерфейсу Babel Code.',
   "settings.language.auto": "Автоматично (мова VS Code)",
   "settings.language.current": "Поточна:",
 
@@ -1108,6 +1106,7 @@ export const dict = {
   "settings.models.hidePromptTraining.title": "Приховувати моделі, що навчаються на запитах",
   "settings.models.hidePromptTraining.description":
     "Приховувати моделі Kilo Gateway, постачальники яких можуть використовувати ваші запити для навчання.",
+  "settings.providers.modeModels.variant": "Міркування за замовчуванням",
   "settings.providers.modeModels": "Модель для кожного режиму",
   "settings.providers.modeModels.description":
     "Перевизначити стандартну модель для певних режимів. Якщо не встановлено, використовується загальна стандартна модель.",
@@ -1130,12 +1129,12 @@ export const dict = {
   "settings.legacyMigration.link": "Перенести зі старої версії",
   "settings.aboutKiloCode.legacyMigration.title": "Перенесення зі старої версії",
   "settings.aboutKiloCode.legacyMigration.description":
-    "Перенести налаштування з попередньої версії Kilo Code, включаючи API-ключі провайдерів та стандартну модель.",
+    "Перенести налаштування з попередньої версії Babel Code, включаючи API-ключі провайдерів та стандартну модель.",
   "settings.aboutKiloCode.rooImport.description": "Імпортувати історію розмов з інсталяції Roo Code.",
   "settings.aboutKiloCode.rooImport.button": "Імпортувати сесії з Roo Code",
 
   // Screen 1 — What's New
-  "migration.whatsNew.title": "Що нового в Kilo Code",
+  "migration.whatsNew.title": "Що нового в Babel Code",
   "migration.whatsNew.badge": "Бета",
   "migration.whatsNew.subtitle": "Ми відбудували розширення на більш швидкій та ефективній основі.",
   "migration.whatsNew.features.performance.title": "Швидша продуктивність агента",

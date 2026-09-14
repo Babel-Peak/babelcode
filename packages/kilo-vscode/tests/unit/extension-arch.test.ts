@@ -71,7 +71,7 @@ describe("Extension — package.json command sync", () => {
     // Commands generated via template literals can't be extracted by regex,
     // so verify the dynamic registration pattern exists in source instead.
     const dynamic: Record<string, string> = {
-      "kilo-code.new.agentManager.jumpTo": "registerCommand(`kilo-code.new.agentManager.jumpTo${",
+      "babel-code.new.agentManager.jumpTo": "registerCommand(`babel-code.new.agentManager.jumpTo${",
     }
 
     const missing: string[] = []
@@ -94,74 +94,75 @@ describe("Extension — package.json command sync", () => {
   })
 
   /**
-   * All declared commands must use the kilo-code.new. prefix.
-   * The legacy kilo-code.* namespace (without .new.) belongs to the old
+   * All declared commands must use the babel-code.new. prefix.
+   * The legacy babel-code.* namespace (without .new.) belongs to the old
    * extension and must not be reintroduced.
    */
-  it("all declared commands use the kilo-code.new. prefix", () => {
-    const bad = declared.filter((cmd) => !cmd.startsWith("kilo-code.new."))
+  it("all declared commands use the babel-code.new. prefix", () => {
+    const bad = declared.filter((cmd) => !cmd.startsWith("babel-code.new."))
     expect(
       bad,
-      `Commands without "kilo-code.new." prefix — use the namespaced form:\n` + bad.map((b) => `  - ${b}`).join("\n"),
+      `Commands without "babel-code.new." prefix — use the namespaced form:\n` + bad.map((b) => `  - ${b}`).join("\n"),
     ).toEqual([])
   })
 
   it("scopes Agent Manager search to the panel and leaves the integrated terminal alone", () => {
     const binding = pkg.contributes?.keybindings?.find(
-      (item: { command: string }) => item.command === "kilo-code.new.agentManager.search",
+      (item: { command: string }) => item.command === "babel-code.new.agentManager.search",
     )
     expect(binding).toMatchObject({
       key: "ctrl+f",
       mac: "cmd+f",
-      when: "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' && !terminalFocus",
+      when: "activeWebviewPanelId == 'babel-code.new.AgentManagerPanel' && !terminalFocus",
     })
   })
 
   it("keeps Agent Manager session and terminal shortcuts focus-aware", () => {
     const terminal = pkg.contributes?.keybindings?.find(
-      (item: { command: string }) => item.command === "kilo-code.new.agentManager.showTerminal",
+      (item: { command: string }) => item.command === "babel-code.new.agentManager.showTerminal",
     )
     const create = pkg.contributes?.keybindings?.find(
-      (item: { command: string }) => item.command === "kilo-code.new.agentManager.newTerminalTab",
+      (item: { command: string }) => item.command === "babel-code.new.agentManager.newTerminalTab",
     )
     const sessionCreate = pkg.contributes?.keybindings?.find(
-      (item: { command: string }) => item.command === "kilo-code.new.agentManager.newTab",
+      (item: { command: string }) => item.command === "babel-code.new.agentManager.newTab",
     )
     expect(terminal).toMatchObject({
       key: "ctrl+/",
       mac: "cmd+/",
-      when: "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' && !kilo-code.new.sidebarFocused",
+      when: "activeWebviewPanelId == 'babel-code.new.AgentManagerPanel' && !babel-code.new.sidebarFocused",
     })
     expect(create).toMatchObject({
       key: "ctrl+shift+t",
       mac: "cmd+shift+t",
-      when: "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' && !kilo-code.new.agentManagerSideTerminalFocused",
+      when: "activeWebviewPanelId == 'babel-code.new.AgentManagerPanel' && !babel-code.new.agentManagerSideTerminalFocused",
     })
     expect(sessionCreate).toMatchObject({
       key: "ctrl+t",
       mac: "cmd+t",
-      when: "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' && !kilo-code.new.agentManagerSideTerminalFocused",
+      when: "activeWebviewPanelId == 'babel-code.new.AgentManagerPanel' && !babel-code.new.agentManagerSideTerminalFocused",
     })
     const terminalCreate = pkg.contributes?.keybindings?.find(
       (item: { command: string; key?: string; mac?: string; when?: string }) =>
-        item.command === "kilo-code.new.agentManager.newSideTerminal" && item.key === "ctrl+t",
+        item.command === "babel-code.new.agentManager.newSideTerminal" && item.key === "ctrl+t",
     )
     expect(terminalCreate).toMatchObject({
       key: "ctrl+t",
       mac: "cmd+t",
-      when: "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' && kilo-code.new.agentManagerSideTerminalFocused",
+      when: "activeWebviewPanelId == 'babel-code.new.AgentManagerPanel' && babel-code.new.agentManagerSideTerminalFocused",
     })
     expect(
       pkg.contributes?.keybindings?.some(
         (item: { command: string }) =>
-          item.command === "kilo-code.new.agentManager.newTerminal" ||
-          item.command === "kilo-code.new.agentManager.newMainTerminal",
+          item.command === "babel-code.new.agentManager.newTerminal" ||
+          item.command === "babel-code.new.agentManager.newMainTerminal",
       ),
     ).toBe(false)
   })
 
   it("declares the Agent Manager terminal destination setting", () => {
-    const setting = pkg.contributes?.configuration?.properties?.["kilo-code.new.agentManager.terminalButtonDestination"]
+    const setting =
+      pkg.contributes?.configuration?.properties?.["babel-code.new.agentManager.terminalButtonDestination"]
     expect(setting).toMatchObject({
       type: "string",
       scope: "application",
@@ -173,28 +174,28 @@ describe("Extension — package.json command sync", () => {
 
   it("scopes the open PR shortcut to Agent Manager", () => {
     const binding = pkg.contributes?.keybindings?.find(
-      (item: { command: string }) => item.command === "kilo-code.new.agentManager.openPR",
+      (item: { command: string }) => item.command === "babel-code.new.agentManager.openPR",
     )
     expect(binding).toMatchObject({
       key: "ctrl+shift+r",
       mac: "cmd+shift+r",
-      when: "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel'",
+      when: "activeWebviewPanelId == 'babel-code.new.AgentManagerPanel'",
     })
   })
 
   it("scopes agent mode shortcuts to focused Kilo webviews", () => {
     const bindings = pkg.contributes?.keybindings?.filter(
       (item: { command: string }) =>
-        item.command === "kilo-code.new.cycleAgentMode" || item.command === "kilo-code.new.cyclePreviousAgentMode",
+        item.command === "babel-code.new.cycleAgentMode" || item.command === "babel-code.new.cyclePreviousAgentMode",
     )
     const when =
-      "kilo-code.new.sidebarFocused || activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' || activeWebviewPanelId == 'kilo-code.new.TabPanel'"
+      "babel-code.new.sidebarFocused || activeWebviewPanelId == 'babel-code.new.AgentManagerPanel' || activeWebviewPanelId == 'babel-code.new.TabPanel'"
 
     expect(bindings).toHaveLength(2)
     expect(bindings).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ command: "kilo-code.new.cycleAgentMode", when }),
-        expect.objectContaining({ command: "kilo-code.new.cyclePreviousAgentMode", when }),
+        expect.objectContaining({ command: "babel-code.new.cycleAgentMode", when }),
+        expect.objectContaining({ command: "babel-code.new.cyclePreviousAgentMode", when }),
       ]),
     )
   })
@@ -263,7 +264,7 @@ describe("Extension — KiloProvider handler wiring", () => {
   })
 
   it("TabPanel deserializer wires setContinueInWorktreeHandler before resolveWebviewPanel", () => {
-    const serializer = ext.indexOf('"kilo-code.new.TabPanel"')
+    const serializer = ext.indexOf('"babel-code.new.TabPanel"')
     expect(serializer, "TabPanel serializer must exist").toBeGreaterThan(-1)
     const body = sliceBlock(ext, serializer)
     const handler = body.indexOf("setContinueInWorktreeHandler")

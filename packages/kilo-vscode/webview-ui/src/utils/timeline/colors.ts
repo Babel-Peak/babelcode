@@ -12,7 +12,7 @@ import type { Message, Part, ToolPart } from "../../types/messages"
 // These mirror the legacy extension's taskTimelineColorPalette exactly.
 
 export const palette = {
-  user: "var(--tl-user, color-mix(in srgb, var(--vscode-editor-findMatchBackground) 50%, var(--vscode-errorForeground)))",
+  user: "var(--tl-user, var(--vscode-charts-green, var(--vscode-editorGutter-addedBackground)))",
   read: "var(--tl-read, var(--vscode-textLink-foreground))",
   write: "var(--tl-write, var(--vscode-focusBorder))",
   tool: "var(--tl-tool, var(--vscode-activityBarBadge-background))",

@@ -302,13 +302,12 @@ export const dict = {
   "session.messages.loadEarlier": "Last inn tidligere meldinger",
   "session.messages.loading": "Laster meldinger...",
 
-  "sidebar.topBar.label": "Kilo Code-navigasjon",
+  "sidebar.topBar.label": "Babel Code-navigasjon",
   "sidebar.topBar.newTask": "Ny Oppgave",
   "sidebar.topBar.history": "Historikk",
   "sidebar.topBar.agentManager": "Agent Manager",
-  "sidebar.topBar.kiloClaw": "KiloClaw",
   "sidebar.topBar.marketplace": "Markedsplass",
-  "sidebar.topBar.profile": "Profil",
+  "sidebar.topBar.browser": "Nettleserforhåndsvisning",
   "sidebar.topBar.settings": "Innstillinger",
   "sidebar.session.newSession": "Ny Økt",
   "sidebar.session.newSession.tooltip": "Start en ny samtale mens den nåværende økten holdes intakt.",
@@ -397,7 +396,6 @@ export const dict = {
   "settings.providers.connected.empty": "Ingen tilkoblede leverandører",
   "settings.providers.section.popular": "Populære leverandører",
   "settings.providers.select.placeholder": "Velg leverandør...",
-  "settings.providers.tag.gateway": "Gateway",
   "settings.providers.tag.environment": "Miljø",
   "settings.providers.tag.config": "Konfigurasjon",
   "settings.providers.tag.chatgpt": "ChatGPT",
@@ -413,6 +411,7 @@ export const dict = {
   "settings.models.hidePromptTraining.title": "Skjul modeller som trener på ledetekster",
   "settings.models.hidePromptTraining.description":
     "Skjul Kilo Gateway-modeller der leverandørene kan bruke ledetekstene dine til trening.",
+  "settings.providers.modeModels.variant": "Standardresonnement",
   "settings.providers.modeModels": "Modell per modus",
   "settings.providers.modeModels.description":
     "Overstyr standardmodellen for bestemte moduser. Hvis ikke angitt, brukes den globale standardmodellen.",
@@ -587,7 +586,7 @@ export const dict = {
   "deviceAuth.toast.codeCopied": "Kode kopiert til utklippstavlen",
   "deviceAuth.toast.errorCopied": "Feil kopiert til utklippstavlen",
   "deviceAuth.status.initiating": "Starter pålogging...",
-  "deviceAuth.title": "Logg inn på Kilo Code",
+  "deviceAuth.title": "Logg inn på Babel Code",
   "deviceAuth.step1": "Trinn 1: Åpne denne URLen",
   "deviceAuth.action.copyUrl": "Kopier URL",
   "deviceAuth.action.openBrowser": "Åpne nettleser",
@@ -610,7 +609,7 @@ export const dict = {
 
   "profile.title": "Profil",
   "profile.notLoggedIn": "Ikke pålogget",
-  "profile.action.login": "Logg inn med Kilo Code",
+  "profile.action.login": "Logg inn med Babel Code",
   "profile.balance.title": "Saldo",
   "profile.balance.refresh": "Oppdater saldo",
   "profile.usage.title": "Abonnementer og forbruk",
@@ -677,10 +676,10 @@ export const dict = {
 
   "settings.experimental.title": "Eksperimentelt",
   "settings.language.title": "Språk",
-  "settings.aboutKiloCode.title": "Om Kilo Code",
+  "settings.aboutKiloCode.title": "Om Babel Code",
 
   "session.messages.welcome":
-    "Kilo Code er en AI-kodingsassistent. Be den om å bygge funksjoner, fikse feil eller forklare kodebasen din.",
+    "Babel Code er en AI-kodingsassistent. Be den om å bygge funksjoner, fikse feil eller forklare kodebasen din.",
   "session.messages.scrollToBottom": "Rull til bunnen",
   "session.messages.initializing": "Initialiserer...",
   "session.messages.taskStarting": "Starter...",
@@ -783,7 +782,7 @@ export const dict = {
   "settings.browser.headless.title": "Headless-modus",
   "settings.browser.headless.description": "Kjør i headless-modus (uten synlig nettleservindu).",
 
-  "settings.language.description": 'Velg språket for Kilo Code-grensesnittet. "Auto" bruker VS Codes visningsspråk.',
+  "settings.language.description": 'Velg språket for Babel Code-grensesnittet. "Auto" bruker VS Codes visningsspråk.',
   "settings.language.auto": "Auto (VS Code-språk)",
   "settings.language.current": "Nåværende:",
 
@@ -1157,12 +1156,12 @@ export const dict = {
   "settings.legacyMigration.link": "Migrer fra eldre versjon",
   "settings.aboutKiloCode.legacyMigration.title": "Migrering fra eldre versjon",
   "settings.aboutKiloCode.legacyMigration.description":
-    "Migrer innstillinger fra en tidligere installasjon av Kilo Code, inkludert API-nøkler for leverandører og standardmodell.",
+    "Migrer innstillinger fra en tidligere installasjon av Babel Code, inkludert API-nøkler for leverandører og standardmodell.",
   "settings.aboutKiloCode.rooImport.description": "Importer samtalehistorikk fra en installasjon av Roo Code.",
   "settings.aboutKiloCode.rooImport.button": "Importer økter fra Roo Code",
 
   // Screen 1 — What's New
-  "migration.whatsNew.title": "Hva er nytt i Kilo Code",
+  "migration.whatsNew.title": "Hva er nytt i Babel Code",
   "migration.whatsNew.subtitle": "Vi har bygget utvidelsen på nytt med et raskere og mer effektivt grunnlag.",
   "migration.whatsNew.features.performance.title": "Raskere agentytelse",
   "migration.whatsNew.features.performance.detail":

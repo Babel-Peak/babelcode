@@ -316,6 +316,10 @@ export interface OpenKiloClawRequest {
   type: "openKiloClaw"
 }
 
+export interface OpenBrowserPreviewRequest {
+  type: "openBrowserPreview"
+}
+
 export interface RequestAgentsMessage {
   type: "requestAgents"
 }
@@ -1528,6 +1532,7 @@ export type WebviewMessage =
   | OpenAgentManagerRequest
   | OpenAdvancedWorktreeRequest
   | OpenKiloClawRequest
+  | OpenBrowserPreviewRequest
   | OpenFileRequest
   | ValidateFilesRequest
   | CancelLoginRequest

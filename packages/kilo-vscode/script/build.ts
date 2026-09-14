@@ -8,6 +8,7 @@ import {
   copyTreeSitterResources,
 } from "../src/services/cli-backend/cli-resources"
 import { ensureFfmpegForTarget } from "./ffmpeg-helper"
+import { preparePlaywrightCore } from "./prepare-playwright-core"
 
 const packageJsonPath = join(import.meta.dir, "..", "package.json")
 const packageJson = await Bun.file(packageJsonPath).json()
@@ -62,6 +63,9 @@ console.log("\n📦 Compiling extension...")
 await $`bun run check-types`
 await $`bun run lint`
 await $`node ${join(import.meta.dir, "..", "esbuild.js")} --production`
+
+// playwright-core is external in the esbuild bundle and must ship in the VSIX.
+preparePlaywrightCore()
 
 for (const config of targets) {
   console.log(`\n🎯 Processing target: ${config.target}`)

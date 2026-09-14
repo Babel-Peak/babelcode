@@ -32,3 +32,8 @@ bin/.cli-version
 
 # Include WAV assets used by extension-host notification playback
 !audio-wav/**
+
+# playwright-core is copied into dist/node_modules/ by
+# script/prepare-playwright-core.ts (kept external by esbuild) and ships
+# via the !dist/** rule above. Note: vsce hard-ignores the top-level
+# node_modules/ directory, so it can never be packaged from there.

@@ -239,6 +239,7 @@ export const dict = {
   "ui.mermaid.downloadSvg": "Preuzmi SVG",
   "ui.mermaid.downloadPng": "Preuzmi PNG",
   "ui.message.deleteQueued": "Obriši poruku iz reda",
+  "ui.message.sendNow": "Zaustavi i pošalji", // kilocode_change
   "ui.question.subtitle.dismissed": "{{count}} dismissed",
   "ui.question.answer.dismissed": "Dismissed",
   // kilocode_change end

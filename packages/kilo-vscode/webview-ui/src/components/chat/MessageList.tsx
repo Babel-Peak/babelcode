@@ -66,13 +66,16 @@ import {
   partitionRows,
   retainTurn,
   transcriptRows,
+  type TranscriptAssistantRow,
   type TranscriptErrorRow,
   type TranscriptHold,
   type TranscriptRow,
+  type TranscriptUserRow,
 } from "../../context/transcript-rows"
 import { PromptRail } from "./PromptRail"
 import { capacity, historyAction, promptItems, railEntries, type PromptRailItem } from "./prompt-rail"
 import { onTimelineHighlight, type TimelineHighlight } from "../../utils/timeline/highlight"
+import { dispatchTimelineViewport } from "../../utils/timeline/viewport"
 import { useTranscriptSearch, type SearchMatch } from "../../context/transcript-search"
 import { applyTranscriptHighlights, clearTranscriptHighlights } from "./transcript-search-highlight"
 import {
@@ -1026,10 +1029,13 @@ export const MessageList: Component<MessageListProps> = (props) => {
   const onScrollToMessage = (e: Event) => {
     const detail = (e as CustomEvent<{ id: string; partId?: string }>).detail
     if (!detail?.id) return
-    const matches = rows().filter((r) => r.type === "assistant" && r.message.id === detail.id)
+    const matches = rows().filter(
+      (r): r is TranscriptUserRow | TranscriptAssistantRow =>
+        (r.type === "user" || r.type === "assistant") && r.message.id === detail.id,
+    )
     // Long messages split into multiple rows (chunks); land on the chunk that
     // actually contains the clicked part, not just the message's first chunk.
-    const row = matches.find((r) => r.type === "assistant" && r.parts.some((p) => p.id === detail.partId)) ?? matches[0]
+    const row = matches.find((r) => r.parts.some((p) => p.id === detail.partId)) ?? matches[0]
     if (!row) return
     jump(row.key)
   }
@@ -1101,6 +1107,7 @@ export const MessageList: Component<MessageListProps> = (props) => {
   })
 
   const trackActive = () => {
+    trackViewport()
     const list = items()
     if (list.length === 0) return setActiveTurn(undefined)
     const handle = virtualizer()
@@ -1115,6 +1122,21 @@ export const MessageList: Component<MessageListProps> = (props) => {
       if (row) return setActiveTurn(row.turn)
     }
     setActiveTurn(list.at(-1)?.turn)
+  }
+
+  // Reports the visible transcript span (first/last visible message) so the
+  // task timeline can draw its viewport indicator line under the bars.
+  const trackViewport = () => {
+    const virtual = partition().virtual
+    const handle = virtualizer()
+    const el = scrollEl()
+    if (!handle || !el || virtual.length === 0) return dispatchTimelineViewport(undefined)
+    const first = virtual[handle.findItemIndex(handle.scrollOffset)]?.message.id
+    const lastIdx = Math.min(virtual.length - 1, handle.findItemIndex(handle.scrollOffset + el.clientHeight))
+    const direct = partition().direct
+    const last =
+      lastIdx >= virtual.length - 1 && direct.length > 0 ? direct.at(-1)?.message.id : virtual[lastIdx]?.message.id
+    dispatchTimelineViewport(first && last ? { first, last } : undefined)
   }
   let activeFrame: number | undefined
   const scheduleActive = () => {

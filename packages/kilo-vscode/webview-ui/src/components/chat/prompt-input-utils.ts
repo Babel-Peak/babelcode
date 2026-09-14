@@ -1,4 +1,58 @@
 import { type ParsedMemoryCommand } from "../../utils/memory-command"
+import type { CodeContext } from "../../hooks/useCodeContext"
+import type { BrowserElement } from "../../hooks/useBrowserElements"
+
+export function codeContextToken(c: CodeContext): string {
+  const file = fileName(c.path)
+  const lines =
+    c.startLine !== undefined && c.endLine !== undefined
+      ? c.startLine === c.endLine
+        ? `${c.startLine}`
+        : `${c.startLine}-${c.endLine}`
+      : c.startLine !== undefined
+        ? `${c.startLine}`
+        : ""
+  const suffix = lines ? `:${lines}` : ""
+  return `[file:${file}${suffix}]`
+}
+
+export function browserElementToken(b: BrowserElement): string {
+  return `[el:${b.label}]`
+}
+
+export function isInlineContextToken(token: string): boolean {
+  return token.startsWith("[file:") || token.startsWith("[el:")
+}
+
+export function formatCodeContext(c: CodeContext): string {
+  return `${c.path}:${c.startLine}-${c.endLine}\n\`\`\`\n${c.text}\n\`\`\``
+}
+
+export function buildPromptMessage(
+  draft: string,
+  contexts: CodeContext[] = [],
+  reviewMarkdown = "",
+  browserElements: BrowserElement[] = [],
+): string {
+  let message = draft
+
+  for (const c of contexts) {
+    const token = codeContextToken(c)
+    if (message.includes(token)) {
+      message = message.split(token).join(`\n\n${formatCodeContext(c)}\n\n`)
+    }
+  }
+
+  for (const b of browserElements) {
+    const token = browserElementToken(b)
+    if (message.includes(token)) {
+      message = message.split(token).join(`\n\n${b.text}\n\n`)
+    }
+  }
+
+  const cleaned = message.replace(/\n{3,}/g, "\n\n").trim()
+  return cleaned && reviewMarkdown ? `${reviewMarkdown}\n\n${cleaned}` : cleaned || reviewMarkdown
+}
 
 export type SandboxDefaultState = {
   desired: boolean
@@ -54,14 +108,14 @@ export function buildHighlightSegments(val: string, paths: Set<string>): { text:
 
   while (remaining.length > 0) {
     let earliest = -1
-    let earliestPath = ""
+    let earliestToken = ""
 
     for (const path of paths) {
-      const token = `@${path}`
+      const token = path.startsWith("@") || path.startsWith("[") ? path : `@${path}`
       const idx = remaining.indexOf(token)
       if (idx !== -1 && (earliest === -1 || idx < earliest)) {
         earliest = idx
-        earliestPath = path
+        earliestToken = token
       }
     }
 
@@ -74,9 +128,8 @@ export function buildHighlightSegments(val: string, paths: Set<string>): { text:
       segments.push({ text: remaining.substring(0, earliest), highlight: false })
     }
 
-    const token = `@${earliestPath}`
-    segments.push({ text: token, highlight: true })
-    remaining = remaining.substring(earliest + token.length)
+    segments.push({ text: earliestToken, highlight: true })
+    remaining = remaining.substring(earliest + earliestToken.length)
   }
 
   return segments
@@ -84,6 +137,99 @@ export function buildHighlightSegments(val: string, paths: Set<string>): { text:
 
 export function atEnd(start: number, end: number, len: number): boolean {
   return start === end && end === len
+}
+
+function expandSelectionForTokens(
+  text: string,
+  selectionStart: number,
+  selectionEnd: number,
+  tokens: string[],
+): { start: number; end: number } | null {
+  let newStart = selectionStart
+  let newEnd = selectionEnd
+  let expanded = false
+  for (const token of tokens) {
+    let idx = text.indexOf(token)
+    while (idx !== -1) {
+      const tokenStart = idx
+      const tokenEnd = idx + token.length
+      if (selectionStart < tokenEnd && selectionEnd > tokenStart) {
+        if (tokenStart < newStart) {
+          newStart = tokenStart
+          expanded = true
+        }
+        if (tokenEnd > newEnd) {
+          newEnd = tokenEnd
+          expanded = true
+        }
+      }
+      idx = text.indexOf(token, tokenEnd)
+    }
+  }
+  return expanded ? { start: newStart, end: newEnd } : null
+}
+
+function tokenDeletionRangeAtOffset(
+  text: string,
+  cursor: number,
+  tokenStart: number,
+  tokenEnd: number,
+  key: "Backspace" | "Delete",
+): { start: number; end: number } | null {
+  const trailing = text[tokenEnd] === " " ? 1 : 0
+  const leading = tokenStart > 0 && text[tokenStart - 1] === " " ? 1 : 0
+  const delEnd = tokenEnd + trailing
+  const delStart = delEnd === text.length && leading ? tokenStart - 1 : tokenStart
+
+  if (cursor > tokenStart && cursor < tokenEnd) {
+    return { start: delStart, end: delEnd }
+  }
+
+  if (key === "Backspace" && (cursor === tokenEnd || (trailing === 1 && cursor === tokenEnd + 1))) {
+    return { start: delStart, end: delEnd }
+  }
+
+  if (key === "Delete") {
+    if (cursor === tokenStart) return { start: delStart, end: delEnd }
+    if (leading === 1 && cursor === tokenStart - 1) return { start: tokenStart - 1, end: delEnd }
+  }
+
+  return null
+}
+
+/**
+ * Find the character range [start, end) of a link notation / token to delete
+ * atomically when Backspace or Delete is pressed, so partial link fragments
+ * aren't left behind. Returns null if cursor/selection is not on a token.
+ */
+export function findTokenDeletionRange(
+  text: string,
+  selectionStart: number,
+  selectionEnd: number,
+  tokens: Set<string>,
+  key: "Backspace" | "Delete",
+): { start: number; end: number } | null {
+  if (tokens.size === 0 || text.length === 0) return null
+
+  const allTokens = [...tokens]
+    .map((p) => (p.startsWith("@") || p.startsWith("[") ? p : `@${p}`))
+    .sort((a, b) => b.length - a.length)
+
+  if (selectionStart !== selectionEnd) {
+    return expandSelectionForTokens(text, selectionStart, selectionEnd, allTokens)
+  }
+
+  const cursor = selectionStart
+  for (const token of allTokens) {
+    let idx = text.indexOf(token)
+    while (idx !== -1) {
+      const match = tokenDeletionRangeAtOffset(text, cursor, idx, idx + token.length, key)
+      if (match) return match
+      idx = text.indexOf(token, idx + token.length)
+    }
+  }
+
+  return null
 }
 
 export function insertSpacedText(

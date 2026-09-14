@@ -233,6 +233,7 @@ export const dict = {
   "ui.mermaid.downloadSvg": "下載 SVG",
   "ui.mermaid.downloadPng": "下載 PNG",
   "ui.message.deleteQueued": "刪除排隊中的訊息",
+  "ui.message.sendNow": "停止並傳送", // kilocode_change
   "ui.question.subtitle.dismissed": "{{count}} dismissed",
   "ui.question.answer.dismissed": "Dismissed",
   // kilocode_change end

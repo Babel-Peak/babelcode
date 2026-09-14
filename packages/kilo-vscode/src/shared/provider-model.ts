@@ -1,5 +1,7 @@
 export const KILO_PROVIDER_ID = "kilo"
-export const KILO_AUTO = { providerID: KILO_PROVIDER_ID, modelID: "kilo-auto/free" } as const
+// Default/fallback model selection. Kilo Gateway is hidden from the picker,
+// so the fallback routes through OpenRouter's built-in "Auto Router" model.
+export const KILO_AUTO = { providerID: "openrouter", modelID: "auto" } as const
 export const CUSTOM_PROVIDER_PACKAGES = ["@ai-sdk/openai-compatible", "@ai-sdk/openai", "@ai-sdk/anthropic"] as const
 export type CustomProviderPackage = (typeof CUSTOM_PROVIDER_PACKAGES)[number]
 export const CUSTOM_PROVIDER_PACKAGE: CustomProviderPackage = "@ai-sdk/openai-compatible"
@@ -18,6 +20,10 @@ export const PROVIDER_PRIORITY = [
 
 export function isCustomProviderPackage(value: unknown): value is CustomProviderPackage {
   return CUSTOM_PROVIDER_PACKAGES.includes(value as CustomProviderPackage)
+}
+
+export function isKiloAuto(sel: { providerID: string; modelID: string }): boolean {
+  return sel.providerID === KILO_AUTO.providerID && sel.modelID === KILO_AUTO.modelID
 }
 
 export function parseModelString(raw: string | undefined | null) {

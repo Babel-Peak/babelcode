@@ -297,13 +297,12 @@ export const dict = {
   "session.messages.loadEarlier": "Učitaj ranije poruke",
   "session.messages.loading": "Učitavanje poruka...",
 
-  "sidebar.topBar.label": "Navigacija Kilo Code",
+  "sidebar.topBar.label": "Navigacija Babel Code",
   "sidebar.topBar.newTask": "Novi Zadatak",
   "sidebar.topBar.history": "Historija",
   "sidebar.topBar.agentManager": "Agent Manager",
-  "sidebar.topBar.kiloClaw": "KiloClaw",
   "sidebar.topBar.marketplace": "Marketplace",
-  "sidebar.topBar.profile": "Profil",
+  "sidebar.topBar.browser": "Pregled preglednika",
   "sidebar.topBar.settings": "Postavke",
   "sidebar.session.newSession": "Nova Sesija",
   "sidebar.session.newSession.tooltip": "Započnite novi razgovor držeći trenutnu sesiju netaknutom.",
@@ -435,7 +434,6 @@ export const dict = {
   "settings.providers.connected.empty": "Nema povezanih provajdera",
   "settings.providers.section.popular": "Popularni provajderi",
   "settings.providers.select.placeholder": "Odaberi provajdera...",
-  "settings.providers.tag.gateway": "Gateway",
   "settings.providers.tag.environment": "Okruženje",
   "settings.providers.tag.config": "Konfiguracija",
   "settings.providers.tag.chatgpt": "ChatGPT",
@@ -451,6 +449,7 @@ export const dict = {
   "settings.models.hidePromptTraining.title": "Sakrij modele koji treniraju na promptovima",
   "settings.models.hidePromptTraining.description":
     "Sakrij Kilo Gateway modele čiji pružaoci mogu koristiti vaše promptove za treniranje.",
+  "settings.providers.modeModels.variant": "Zadano razmišljanje",
   "settings.providers.modeModels": "Model po režimu",
   "settings.providers.modeModels.description":
     "Zamijenite podrazumijevani model za određene režime. Ako nije postavljeno, koristi se globalni podrazumijevani model.",
@@ -627,7 +626,7 @@ export const dict = {
   "deviceAuth.toast.codeCopied": "Kod kopiran u međuspremnik",
   "deviceAuth.toast.errorCopied": "Greška kopirana u međuspremnik",
   "deviceAuth.status.initiating": "Pokretanje prijave...",
-  "deviceAuth.title": "Prijavite se u Kilo Code",
+  "deviceAuth.title": "Prijavite se u Babel Code",
   "deviceAuth.step1": "Korak 1: Otvorite ovaj URL",
   "deviceAuth.action.copyUrl": "Kopiraj URL",
   "deviceAuth.action.openBrowser": "Otvori preglednik",
@@ -650,7 +649,7 @@ export const dict = {
 
   "profile.title": "Profil",
   "profile.notLoggedIn": "Niste prijavljeni",
-  "profile.action.login": "Prijavite se putem Kilo Code",
+  "profile.action.login": "Prijavite se putem Babel Code",
   "profile.balance.title": "Stanje",
   "profile.balance.refresh": "Osvježi stanje",
   "profile.usage.title": "Planovi i korištenje",
@@ -717,10 +716,10 @@ export const dict = {
 
   "settings.experimental.title": "Eksperimentalno",
   "settings.language.title": "Jezik",
-  "settings.aboutKiloCode.title": "O Kilo Code-u",
+  "settings.aboutKiloCode.title": "O Babel Code-u",
 
   "session.messages.welcome":
-    "Kilo Code je AI asistent za programiranje. Zatražite da gradi funkcionalnosti, ispravlja greške ili objasni vašu bazu koda.",
+    "Babel Code je AI asistent za programiranje. Zatražite da gradi funkcionalnosti, ispravlja greške ili objasni vašu bazu koda.",
   "session.messages.scrollToBottom": "Pomakni se na dno",
   "session.messages.initializing": "Inicijalizacija...",
   "session.messages.taskStarting": "Pokretanje...",
@@ -823,7 +822,7 @@ export const dict = {
   "settings.browser.headless.title": "Headless način",
   "settings.browser.headless.description": "Pokreni u headless načinu (bez vidljivog prozora preglednika).",
 
-  "settings.language.description": 'Odaberite jezik za Kilo Code sučelje. "Auto" koristi jezik prikaza VS Code-a.',
+  "settings.language.description": 'Odaberite jezik za Babel Code sučelje. "Auto" koristi jezik prikaza VS Code-a.',
   "settings.language.auto": "Auto (VS Code jezik)",
   "settings.language.current": "Trenutni:",
 
@@ -1164,12 +1163,12 @@ export const dict = {
   "settings.legacyMigration.link": "Migriraj sa prethodne verzije",
   "settings.aboutKiloCode.legacyMigration.title": "Migracija sa prethodne verzije",
   "settings.aboutKiloCode.legacyMigration.description":
-    "Migrirajte postavke iz prethodne instalacije Kilo Code, uključujući API ključeve provajdera i podrazumijevani model.",
+    "Migrirajte postavke iz prethodne instalacije Babel Code, uključujući API ključeve provajdera i podrazumijevani model.",
   "settings.aboutKiloCode.rooImport.description": "Uvezite historiju razgovora iz instalacije Roo Code.",
   "settings.aboutKiloCode.rooImport.button": "Uvezi sesije iz Roo Code",
 
   // Screen 1 — What's New
-  "migration.whatsNew.title": "Šta je novo u Kilo Code",
+  "migration.whatsNew.title": "Šta je novo u Babel Code",
   "migration.whatsNew.subtitle": "Ponovo smo izgradili ekstenziju na bržem i efikasnijem temelju.",
   "migration.whatsNew.features.performance.title": "Brže performanse agenta",
   "migration.whatsNew.features.performance.detail":

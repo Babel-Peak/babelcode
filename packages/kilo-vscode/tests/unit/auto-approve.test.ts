@@ -69,7 +69,7 @@ function config(initial: boolean, info: Record<string, unknown> = {}) {
     set active(value: boolean) {
       state.active = value
     },
-    emit(key = "kilo-code.new.autoApprove.enabled") {
+    emit(key = "babel-code.new.autoApprove.enabled") {
       for (const handler of handlers) handler({ affectsConfiguration: (name) => name === key })
     },
   }

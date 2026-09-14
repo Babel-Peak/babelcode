@@ -237,6 +237,7 @@ export const dict = {
   "ui.mermaid.downloadSvg": "SVG indir",
   "ui.mermaid.downloadPng": "PNG indir",
   "ui.message.deleteQueued": "Kuyruktaki mesajı sil",
+  "ui.message.sendNow": "Durdur ve gönder", // kilocode_change
   "ui.question.subtitle.dismissed": "{{count}} dismissed",
   "ui.question.answer.dismissed": "Dismissed",
   // kilocode_change end

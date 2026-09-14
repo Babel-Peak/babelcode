@@ -46,9 +46,11 @@ import type {
   SkillInfo,
   ExtensionMessage,
   FileAttachment,
+  FilePart,
   SendMessageFailedMessage,
   McpStatusEntry,
   MessageLoadMode,
+  TextPart,
   ToolPart,
 } from "../types/messages"
 import { agentProject, isStaleAgentSession } from "./session-project"
@@ -82,11 +84,12 @@ import { PartStash } from "./part-stash"
 import { isolate, mergeOptimisticPart, mergeParts } from "./session-parts"
 import { mergeMessages, sameReconcileShape } from "./session-merge"
 import { state as todoState } from "./todo-revert"
-import { sessionVariantKeys, transferVariants, variantKey } from "./session-variant-store"
+import { dropSessionVariants, sessionVariantKeys, transferVariants, variantKey } from "./session-variant-store"
 import { createSessionVariants } from "./session-variants"
-import { KILO_AUTO, KILO_PROVIDER_ID, parseModelString } from "../../../src/shared/provider-model"
-import { reviewMetadata, type ReviewMessageData } from "../../../src/shared/review-comments"
-import { activeUserMessageID, visibleMessages as filterVisibleMessages } from "./session-queue"
+import { applyCommandOverrides, type CommandOverrides } from "./command-overrides"
+import { isKiloAuto, KILO_AUTO, KILO_PROVIDER_ID, parseModelString } from "../../../src/shared/provider-model"
+import { partReview, reviewMetadata, type ReviewMessageData } from "../../../src/shared/review-comments"
+import { activeUserMessageID, extractQueuedPayload, visibleMessages as filterVisibleMessages } from "./session-queue"
 import { clearSessionDraftDiscarded, deleteDraftsForSession } from "../utils/draft-store"
 import { createAbortState } from "./abort-state"
 import { clearIfOn, createCloudPrune } from "./session-cloud-prune"
@@ -227,6 +230,7 @@ interface SessionContextValue {
   currentVariant: (sessionID?: string) => string | undefined
   variantForAgent: (agent: string, model: ModelSelection | null) => string | undefined
   selectVariant: (value: string | undefined, sessionID?: string) => void
+  resetVariant: (sessionID?: string) => void
 
   // Model favorites
   recentModels: Accessor<ModelSelection[]>
@@ -246,6 +250,7 @@ interface SessionContextValue {
   revertSession: (messageID: string, partID?: string) => void
   unrevertSession: () => void
   deleteQueuedMessage: (sessionID: string, messageID: string) => void
+  sendQueuedMessage: (sessionID: string, messageID: string) => void
   sendMessage: (
     text: string,
     providerID?: string,
@@ -586,11 +591,13 @@ export const SessionProvider: ParentComponent = (props) => {
   }
 
   function resolveModel(agentName: string, override?: ModelSelection | null): ModelSelection | null {
+    const mode = getModeModel(agentName)
+    const effective = override && mode && isKiloAuto(override) ? null : override
     return resolveModelSelection({
       providers: provider.providers(),
       connected: provider.connected(),
-      override,
-      mode: getModeModel(agentName),
+      override: effective,
+      mode,
       global: getGlobalModel(),
       recent: store.recentModels,
       fallback: KILO_AUTO,
@@ -667,11 +674,23 @@ export const SessionProvider: ParentComponent = (props) => {
     session: currentSessionID,
     agent: agentForScope,
     find: provider.findModel,
+    configVariant: (name) => config().agent?.[name]?.variant ?? undefined,
     post: vscode.postMessage,
     listen: vscode.onMessage,
   })
   const { carry: carryVariant, list: variantList, agent: variantForAgent, current: currentVariant } = variants
   const selectVariant = variants.select
+
+  /** Drop session-scoped variant choices so the mode's configured default
+   * reasoning applies again (mirrors selectAgent's model-override reset). */
+  function resetVariant(sessionID?: string) {
+    const id = sessionID ?? currentSessionID()
+    if (!id) return
+    setStore(
+      "variantSelections",
+      produce((v) => dropSessionVariants(v, id)),
+    )
+  }
   const models = createModelSelector({
     current: currentSessionID,
     agent: agentForScope,
@@ -2314,7 +2333,7 @@ export const SessionProvider: ParentComponent = (props) => {
     draftID?: string,
     context?: string,
     origin?: string | null,
-    overrides?: { agent?: string; model?: string; variant?: string },
+    overrides?: CommandOverrides,
   ) {
     if (!server.isConnected()) {
       console.warn("[Kilo New] Cannot send command: not connected")
@@ -2326,18 +2345,13 @@ export const SessionProvider: ParentComponent = (props) => {
     const scope = effectiveDraftID ?? sid
     if (!sid && !draftID && effectiveDraftID) agentDrafts.seed(effectiveDraftID)
 
-    if (overrides?.agent) {
-      selectAgent(overrides.agent, scope)
-    }
-    if (overrides?.model) {
-      const parsed = parseModelString(overrides.model)
-      if (parsed) {
-        selectModel(parsed.providerID, parsed.modelID, scope)
-      }
-    }
-    if (overrides?.variant) {
-      selectVariant(overrides.variant, scope)
-    }
+    applyCommandOverrides(overrides, scope, {
+      selectAgent,
+      resetVariant,
+      selectModel,
+      selectVariant,
+      parseModel: parseModelString,
+    })
 
     const effectiveSelection = selected(scope)
     const effectiveProvider = effectiveSelection?.providerID ?? providerID
@@ -2820,6 +2834,48 @@ export const SessionProvider: ParentComponent = (props) => {
     vscode.postMessage({ type: "deleteMessage", sessionID, messageID })
   }
 
+  function sendQueuedMessage(sessionID: string, messageID: string) {
+    if (!server.isConnected()) return
+    const msg = (store.messages[sessionID] ?? []).find((m) => m.id === messageID)
+    if (!msg) return
+
+    const payload = extractQueuedPayload(getParts(messageID))
+    const currentStatus = statusMap[sessionID] ?? idle
+    if (currentStatus.type !== "idle") {
+      const activePendingID = [...pendingSubmissions].reverse().find(([, sid]) => sid === sessionID)?.[0]
+      if (aborts.request(sessionID, currentStatus.type, activePendingID)) {
+        vscode.postMessage({ type: "abort", sessionID })
+      }
+    }
+
+    deleteQueuedMessage(sessionID, messageID)
+
+    if (payload.isCommand && payload.commandName) {
+      sendCommand(
+        payload.commandName,
+        payload.commandArgs ?? "",
+        msg.model?.providerID,
+        msg.model?.modelID,
+        payload.files,
+        undefined,
+        undefined,
+        sessionID,
+      )
+      return
+    }
+
+    sendMessage(
+      payload.text,
+      msg.model?.providerID,
+      msg.model?.modelID,
+      payload.files,
+      undefined,
+      undefined,
+      payload.review,
+      sessionID,
+    )
+  }
+
   function syncSession(sessionID: string, parentSessionID = currentSessionID(), scope: "task" | "inspector" = "task") {
     vscode.postMessage({ type: "syncSession", sessionID, parentSessionID, scope })
   }
@@ -3001,6 +3057,7 @@ export const SessionProvider: ParentComponent = (props) => {
     currentVariant,
     variantForAgent,
     selectVariant,
+    resetVariant,
     revert,
     revertedCount,
     summary,
@@ -3008,6 +3065,7 @@ export const SessionProvider: ParentComponent = (props) => {
     revertSession,
     unrevertSession,
     deleteQueuedMessage,
+    sendQueuedMessage,
     sendMessage,
     sendCommand,
     abort,

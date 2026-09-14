@@ -1,4 +1,13 @@
-import type { Message, Part, SessionInfo, SessionStatusInfo } from "../types/messages"
+import { partReview, type ReviewMessageData } from "../../../src/shared/review-comments"
+import type {
+  FileAttachment,
+  FilePart,
+  Message,
+  Part,
+  SessionInfo,
+  SessionStatusInfo,
+  TextPart,
+} from "../types/messages"
 
 export type RevertBoundary = Pick<NonNullable<SessionInfo["revert"]>, "messageID" | "partID">
 
@@ -232,4 +241,37 @@ export function partitionTurns(turns: MessageTurn[], ids: ReadonlySet<string>, q
   const idx = visible.findIndex((turn) => ids.has(turn.user.id))
   if (idx === -1) return { virtual: visible, direct: [] as MessageTurn[], queued: waiting }
   return { virtual: visible.slice(0, idx), direct: visible.slice(idx), queued: waiting }
+}
+
+export interface QueuedPromptPayload {
+  text: string
+  review?: ReviewMessageData
+  files?: FileAttachment[]
+  isCommand?: boolean
+  commandName?: string
+  commandArgs?: string
+}
+
+export function extractQueuedPayload(parts: readonly Part[]): QueuedPromptPayload {
+  const textPart = parts.find((p): p is TextPart => p.type === "text" && !(p as { synthetic?: boolean }).synthetic)
+  const review = textPart ? partReview(textPart.metadata, textPart.text) : undefined
+  const text = review ? review.body : (textPart?.text ?? "")
+  const files: FileAttachment[] = parts
+    .filter((p): p is FilePart => p.type === "file")
+    .map((f) => ({
+      mime: f.mime,
+      url: f.url,
+      filename: f.filename,
+      source: f.source,
+    }))
+
+  const match = !review && text.startsWith("/") ? text.match(/^\/([^\s]+)(?:\s+([\s\S]*))?$/) : null
+  return {
+    text,
+    review: review?.data,
+    files: files.length > 0 ? files : undefined,
+    isCommand: !!match,
+    commandName: match?.[1],
+    commandArgs: match?.[2] ?? "",
+  }
 }

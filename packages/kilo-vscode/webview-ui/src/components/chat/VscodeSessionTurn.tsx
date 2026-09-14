@@ -136,6 +136,8 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
                 interrupted={interrupted()}
                 queued={props.queued}
                 onFork={props.onForkMessage ? () => props.onForkMessage?.(msg().sessionID, msg().id) : undefined}
+                onDelete={props.queued ? () => session.deleteQueuedMessage(msg().sessionID, msg().id) : undefined}
+                onSendNow={props.queued ? () => session.sendQueuedMessage(msg().sessionID, msg().id) : undefined}
                 onRevert={
                   assistantMessages().length > 0
                     ? () => {

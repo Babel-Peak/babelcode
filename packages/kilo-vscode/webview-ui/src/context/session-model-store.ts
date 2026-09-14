@@ -1,4 +1,5 @@
 import type { ModelSelection, Provider } from "../types/messages"
+import { isKiloAuto } from "../../../src/shared/provider-model"
 import { resolveModelSelection } from "./model-selection"
 
 /**
@@ -32,11 +33,13 @@ function resolveModel(
   override?: ModelSelection | null,
   recents?: ModelSelection[],
 ): ModelSelection | null {
+  const mode = env.getModeModel(agentName)
+  const effective = override && mode && isKiloAuto(override) ? null : override
   return resolveModelSelection({
     providers: env.providers,
     connected: env.connected,
-    override,
-    mode: env.getModeModel(agentName),
+    override: effective,
+    mode,
     global: env.getGlobalModel(),
     recent: recents,
     fallback: env.fallback,

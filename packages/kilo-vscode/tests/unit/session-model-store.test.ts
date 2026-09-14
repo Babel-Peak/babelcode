@@ -8,6 +8,7 @@ import {
   getSelected,
 } from "../../webview-ui/src/context/session-model-store"
 import type { ModelSelection, Provider } from "../../webview-ui/src/types/messages"
+import { KILO_AUTO as SHARED_KILO_AUTO } from "../../src/shared/provider-model"
 
 function makeProvider(id: string, models: string[]): Provider {
   const result: Provider = { id, name: id, models: {} }
@@ -257,5 +258,20 @@ describe("per-mode model memory", () => {
     }
 
     expect(getSelected(switched, configured, "session-a", "code")).toEqual(gpt)
+  })
+
+  it("mode-specific model settings take priority over shared KILO_AUTO override", () => {
+    const configured: ResolveEnv = {
+      ...env(),
+      providers: {
+        ...providers,
+        openrouter: makeProvider("openrouter", ["auto"]),
+      },
+      connected: ["kilo", "anthropic", "openai", "openrouter"],
+      getModeModel: (name) => (name === "code" ? claude : null),
+    }
+
+    const store = { ...emptyStore(), modelSelections: { code: SHARED_KILO_AUTO } }
+    expect(getSelected(store, configured, undefined, "code")).toEqual(claude)
   })
 })

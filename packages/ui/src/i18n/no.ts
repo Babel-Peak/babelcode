@@ -232,6 +232,7 @@ export const dict: Record<Keys, string> = {
   "ui.mermaid.renderError": "Mermaid-gjengivelse mislyktes: {{message}}",
   "ui.mermaid.rendering": "Gjengir Mermaid-diagram...",
   "ui.message.deleteQueued": "Slett melding i kø",
+  "ui.message.sendNow": "Stopp og send", // kilocode_change
   "ui.messagePart.mcp.input": "Inndata",
   "ui.messagePart.mcp.output": "Utdata",
   "ui.question.answer.dismissed": "Dismissed",

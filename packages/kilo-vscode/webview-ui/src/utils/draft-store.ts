@@ -1,10 +1,12 @@
 import type { ReviewCommentEntry } from "../types/messages"
 import type { ImageAttachment } from "../hooks/useImageAttachments"
+import type { CodeContext } from "../hooks/useCodeContext"
 import { pendingDraftKey, sessionDraftKey } from "./prompt-drafts"
 
 export const drafts = new Map<string, string>()
 export const reviewDrafts = new Map<string, ReviewCommentEntry[]>()
 export const imageDrafts = new Map<string, ImageAttachment[]>()
+export const codeContextDrafts = new Map<string, CodeContext[]>()
 export const scrollDrafts = new Map<string, number>()
 const discarded = new Set<string>()
 const discardedSessions = new Set<string>()
@@ -16,6 +18,7 @@ export function savePromptDraft(
   comments: ReviewCommentEntry[],
   images: ImageAttachment[],
   scroll = 0,
+  contexts: CodeContext[] = [],
 ) {
   if (text) drafts.set(key, text)
   else drafts.delete(key)
@@ -23,14 +26,16 @@ export function savePromptDraft(
   else reviewDrafts.delete(key)
   if (images.length > 0) imageDrafts.set(key, images)
   else imageDrafts.delete(key)
-  if (text || comments.length > 0 || images.length > 0) scrollDrafts.set(key, scroll)
+  if (contexts.length > 0) codeContextDrafts.set(key, contexts)
+  else codeContextDrafts.delete(key)
+  if (text || comments.length > 0 || images.length > 0 || contexts.length > 0) scrollDrafts.set(key, scroll)
   else scrollDrafts.delete(key)
 }
 
 function remove(raw: string | undefined) {
   if (!raw) return
   const suffix = `:${raw}`
-  for (const map of [drafts, reviewDrafts, imageDrafts, scrollDrafts]) {
+  for (const map of [drafts, reviewDrafts, imageDrafts, codeContextDrafts, scrollDrafts]) {
     for (const key of map.keys()) {
       if (typeof key === "string" && key.endsWith(suffix)) map.delete(key)
     }

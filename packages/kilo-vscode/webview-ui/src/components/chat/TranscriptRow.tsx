@@ -10,6 +10,7 @@ import { useServer } from "../../context/server"
 import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
 import { useFeedback } from "../../context/feedback"
+import { formatAgentLabel, titleCaseAgentName } from "../../utils/agent-label"
 import { AssistantMessage } from "./AssistantMessage"
 import { ErrorDisplay, type ErrorDisplayProps } from "./ErrorDisplay"
 import { VscodeUserMessage } from "./VscodeUserMessage"
@@ -41,6 +42,13 @@ export const TranscriptRowView: Component<TranscriptRowViewProps> = (props) => {
 
   const open = () => vscode.postMessage({ type: "openChanges", turnId: props.row.message.id })
 
+  const modeLabel = () => {
+    const name = props.row.message.agent ?? props.row.message.mode
+    if (!name) return ""
+    const agent = session.agents().find((a) => a.name === name)
+    return agent ? formatAgentLabel(agent) : titleCaseAgentName(name)
+  }
+
   return (
     <div
       class="vscode-session-turn"
@@ -70,6 +78,9 @@ export const TranscriptRowView: Component<TranscriptRowViewProps> = (props) => {
               onDelete={
                 row().queued ? () => session.deleteQueuedMessage(row().message.sessionID, row().message.id) : undefined
               }
+              onSendNow={
+                row().queued ? () => session.sendQueuedMessage(row().message.sessionID, row().message.id) : undefined
+              }
               onRevert={
                 row().answered
                   ? () => {
@@ -86,6 +97,9 @@ export const TranscriptRowView: Component<TranscriptRowViewProps> = (props) => {
       <Show when={props.row.type === "assistant" ? props.row : undefined}>
         {(row) => (
           <div class="vscode-session-turn-assistant">
+            <Show when={modeLabel()}>
+              <span data-component="assistant-mode">{modeLabel()}</span>
+            </Show>
             <AssistantMessage
               message={row().message as unknown as SDKAssistantMessage}
               parts={row().parts as unknown as SDKPart[]}

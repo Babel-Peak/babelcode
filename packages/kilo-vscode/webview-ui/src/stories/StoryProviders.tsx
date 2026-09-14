@@ -260,6 +260,8 @@ export function mockSessionValue(overrides?: {
     currentVariant: () => undefined,
     variantForAgent: () => undefined,
     selectVariant: noop,
+    deleteQueuedMessage: noop,
+    sendQueuedMessage: noop,
     sendMessage: noop,
     sendCommand: noop,
     abort: noop,

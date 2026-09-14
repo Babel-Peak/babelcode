@@ -295,13 +295,12 @@ export const dict = {
   "session.messages.loadEarlier": "以前のメッセージを読み込む",
   "session.messages.loading": "メッセージを読み込み中...",
 
-  "sidebar.topBar.label": "Kilo Code ナビゲーション",
+  "sidebar.topBar.label": "Babel Code ナビゲーション",
   "sidebar.topBar.newTask": "新規タスク",
   "sidebar.topBar.history": "履歴",
   "sidebar.topBar.agentManager": "エージェントマネージャー",
-  "sidebar.topBar.kiloClaw": "KiloClaw",
   "sidebar.topBar.marketplace": "マーケットプレイス",
-  "sidebar.topBar.profile": "プロフィール",
+  "sidebar.topBar.browser": "ブラウザプレビュー",
   "sidebar.topBar.settings": "設定",
   "sidebar.session.newSession": "新規セッション",
   "sidebar.session.newSession.tooltip": "現在のセッションを維持したまま、新しい会話を開始します。",
@@ -430,7 +429,6 @@ export const dict = {
   "settings.providers.connected.empty": "接続済みプロバイダーはありません",
   "settings.providers.section.popular": "人気のプロバイダー",
   "settings.providers.select.placeholder": "プロバイダーを選択...",
-  "settings.providers.tag.gateway": "Gateway",
   "settings.providers.tag.environment": "環境",
   "settings.providers.tag.config": "設定",
   "settings.providers.tag.chatgpt": "ChatGPT",
@@ -446,6 +444,7 @@ export const dict = {
   "settings.models.hidePromptTraining.title": "プロンプトを学習に使用するモデルを非表示",
   "settings.models.hidePromptTraining.description":
     "プロバイダーがプロンプトを学習に使用する可能性のある Kilo Gateway モデルを非表示にします。",
+  "settings.providers.modeModels.variant": "デフォルトの推論",
   "settings.providers.modeModels": "モードごとのモデル",
   "settings.providers.modeModels.description":
     "特定のモードのデフォルトモデルを上書きします。設定されていない場合、グローバルデフォルトモデルが使用されます。",
@@ -620,7 +619,7 @@ export const dict = {
   "deviceAuth.toast.codeCopied": "コードをクリップボードにコピーしました",
   "deviceAuth.toast.errorCopied": "エラーがクリップボードにコピーされました",
   "deviceAuth.status.initiating": "ログインを開始しています...",
-  "deviceAuth.title": "Kilo Codeにサインイン",
+  "deviceAuth.title": "Babel Codeにサインイン",
   "deviceAuth.step1": "ステップ1：このURLを開く",
   "deviceAuth.action.copyUrl": "URLをコピー",
   "deviceAuth.action.openBrowser": "ブラウザを開く",
@@ -643,7 +642,7 @@ export const dict = {
 
   "profile.title": "プロフィール",
   "profile.notLoggedIn": "ログインしていません",
-  "profile.action.login": "Kilo Codeでログイン",
+  "profile.action.login": "Babel Codeでログイン",
   "profile.balance.title": "残高",
   "profile.balance.refresh": "残高を更新",
   "profile.usage.title": "プランと使用状況",
@@ -710,10 +709,10 @@ export const dict = {
 
   "settings.experimental.title": "実験的機能",
   "settings.language.title": "言語",
-  "settings.aboutKiloCode.title": "Kilo Codeについて",
+  "settings.aboutKiloCode.title": "Babel Codeについて",
 
   "session.messages.welcome":
-    "Kilo CodeはAIコーディングアシスタントです。機能の構築、バグの修正、コードベースの説明を依頼できます。",
+    "Babel CodeはAIコーディングアシスタントです。機能の構築、バグの修正、コードベースの説明を依頼できます。",
   "session.messages.scrollToBottom": "下にスクロール",
   "session.messages.initializing": "初期化中...",
   "session.messages.taskStarting": "開始中...",
@@ -817,7 +816,7 @@ export const dict = {
   "settings.browser.headless.title": "ヘッドレスモード",
   "settings.browser.headless.description": "ヘッドレスモードで実行します（ブラウザウィンドウは表示されません）。",
 
-  "settings.language.description": "Kilo Code UIの言語を選択します。「自動」はVS Codeの表示言語を使用します。",
+  "settings.language.description": "Babel Code UIの言語を選択します。「自動」はVS Codeの表示言語を使用します。",
   "settings.language.auto": "自動（VS Code言語）",
   "settings.language.current": "現在：",
 
@@ -1151,12 +1150,12 @@ export const dict = {
   "settings.legacyMigration.link": "レガシーバージョンからの移行",
   "settings.aboutKiloCode.legacyMigration.title": "レガシー移行",
   "settings.aboutKiloCode.legacyMigration.description":
-    "プロバイダーのAPIキーやデフォルトモデルなど、以前にインストールしたKilo Codeから設定を移行します。",
+    "プロバイダーのAPIキーやデフォルトモデルなど、以前にインストールしたBabel Codeから設定を移行します。",
   "settings.aboutKiloCode.rooImport.description": "インストールしたRoo Codeから会話履歴を移行します。",
   "settings.aboutKiloCode.rooImport.button": "Roo Codeからセッションをインポート",
 
   // Screen 1 — What's New
-  "migration.whatsNew.title": "Kilo Codeの新機能",
+  "migration.whatsNew.title": "Babel Codeの新機能",
   "migration.whatsNew.subtitle": "より高速で効率的な基盤上に拡張機能を再構築しました。",
   "migration.whatsNew.features.performance.title": "高速なエージェントパフォーマンス",
   "migration.whatsNew.features.performance.detail":

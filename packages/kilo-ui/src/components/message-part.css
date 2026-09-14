@@ -218,6 +218,69 @@
   text-decoration: underline;
 }
 
+/* Inline citations (code context, browser elements) in sent user messages */
+[data-slot="user-message-inline-citation"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: baseline;
+  padding: 1px 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background: var(--vscode-badge-background, rgba(255, 255, 255, 0.1));
+  color: var(--vscode-badge-foreground, inherit);
+  border: 1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.15));
+  font-size: var(--kilo-font-size-12);
+  font-weight: 500;
+  user-select: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+[data-slot="user-message-inline-citation"][data-type="browser-element"] {
+  cursor: default;
+}
+
+[data-slot="user-message-inline-citation"]:hover {
+  background: color-mix(in srgb, var(--vscode-badge-background, #3794ff) 25%, transparent);
+}
+
+/* Code context badges in sent user messages (legacy) */
+[data-slot="user-message-code-contexts"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+[data-slot="user-message-code-context-badge"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-size: var(--kilo-font-size-12);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s;
+}
+
+[data-slot="user-message-code-context-badge"]:hover {
+  background: #f5f5f5;
+}
+
+[data-slot="user-message-code-context-text"] {
+  font-family: var(--font-family-mono, monospace);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 html[data-theme="kilo-vscode"] [data-component="bash-output"] {
   border-radius: 0;
   border: 0;

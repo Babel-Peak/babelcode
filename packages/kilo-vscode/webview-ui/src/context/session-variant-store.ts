@@ -83,6 +83,11 @@ export function sessionVariantKeys(store: Record<string, string>, session: strin
   return Object.keys(store).filter((key) => key.startsWith(prefix))
 }
 
+/** Remove every session-scoped variant key from the store in place. */
+export function dropSessionVariants(store: Record<string, string>, session: string) {
+  for (const key of sessionVariantKeys(store, session)) delete store[key]
+}
+
 export function sessionVariants(store: Record<string, string>, session: string) {
   const prefix = `session/${session}/`
   return Object.fromEntries(

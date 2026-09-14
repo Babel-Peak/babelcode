@@ -1,6 +1,6 @@
 # Releasing Kilo Code
 
-Kilo Code uses a fully automated CI pipeline triggered via GitHub Actions `workflow_dispatch`. A single workflow handles version bumping, building all artifacts, publishing to every distribution channel, and updating package registries.
+Kilo Code uses a fully automated CI pipeline. Changes under `packages/kilo-vscode/` merged to `main` automatically create a patch release and upload the extension VSIX files to GitHub Releases. Manual `workflow_dispatch` runs remain available for major, minor, prerelease, and explicit-version releases.
 
 ## How to Trigger a Release
 
@@ -15,6 +15,10 @@ Kilo Code uses a fully automated CI pipeline triggered via GitHub Actions `workf
    > The default behavior — leaving `version` empty and selecting a `bump` level — is almost always what you want. The automated bump logic computes the correct next version from the current state of the repo. Only use the `version` override for exceptional cases like skipping versions or publishing a pre-release (e.g. `1.5.0-beta.1`).
 
 5. Click **"Run workflow"** to start the release.
+
+## Automatic VS Code Deployments
+
+Merges to `main` that change `packages/kilo-vscode/` or a changeset trigger the same release pipeline automatically with a patch version. The pipeline uploads all supported platform-specific VSIX files as assets on the GitHub Release.
 
 ## What Happens During a Release
 
@@ -75,8 +79,7 @@ Downloads all build artifacts and publishes to every distribution channel:
 
 #### VS Code Extension
 
-- Publishes platform-specific VSIX packages to the **VS Code Marketplace** via `vsce`.
-- Uploads all VSIX files to the **GitHub Release** as assets.
+- Uploads platform-specific VSIX packages to the **GitHub Release** as assets.
 
 #### Package Registries (stable releases only)
 
@@ -109,8 +112,6 @@ The following secrets must be configured in the repository:
 | `KILO_MAINTAINER_APP_ID` | GitHub App ID for the kilo-maintainer bot (used for git commits) |
 | `KILO_MAINTAINER_APP_SECRET` | GitHub App secret for the kilo-maintainer bot |
 | `NPM_TOKEN` | npm authentication token for publishing packages |
-| `VSCE_TOKEN` | VS Code Marketplace personal access token |
-| `OVSX_TOKEN` | Open VSX Registry token (currently unused but configured) |
 | `AUR_KEY` | SSH private key for pushing to the AUR |
 
 ### Concurrency

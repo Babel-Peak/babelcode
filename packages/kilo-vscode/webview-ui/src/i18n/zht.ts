@@ -281,13 +281,12 @@ export const dict = {
   "session.messages.loadEarlier": "載入更早的訊息",
   "session.messages.loading": "正在載入訊息...",
 
-  "sidebar.topBar.label": "Kilo Code 導覽",
+  "sidebar.topBar.label": "Babel Code 導覽",
   "sidebar.topBar.newTask": "新建任務",
   "sidebar.topBar.history": "歷史記錄",
   "sidebar.topBar.agentManager": "代理管理器",
-  "sidebar.topBar.kiloClaw": "KiloClaw",
   "sidebar.topBar.marketplace": "市集",
-  "sidebar.topBar.profile": "個人資料",
+  "sidebar.topBar.browser": "瀏覽器預覽",
   "sidebar.topBar.settings": "設定",
   "sidebar.session.newSession": "新會話",
   "sidebar.session.newSession.tooltip": "在保持當前會話完整的同時開始全新的對話。",
@@ -376,7 +375,6 @@ export const dict = {
   "settings.providers.connected.empty": "沒有已連線的供應商",
   "settings.providers.section.popular": "熱門供應商",
   "settings.providers.select.placeholder": "選擇供應商...",
-  "settings.providers.tag.gateway": "Gateway",
   "settings.providers.tag.environment": "環境",
   "settings.providers.tag.config": "設定",
   "settings.providers.tag.chatgpt": "ChatGPT",
@@ -390,6 +388,7 @@ export const dict = {
   "settings.providers.subagentModel.description": "task-tool 子代理的預設模型和推理工作量。留空以繼承呼叫代理的模型。",
   "settings.models.hidePromptTraining.title": "隱藏使用提示詞訓練的模型",
   "settings.models.hidePromptTraining.description": "隱藏供應商可能會使用您的提示詞進行訓練的 Kilo Gateway 模型。",
+  "settings.providers.modeModels.variant": "預設推理",
   "settings.providers.modeModels": "按模式選擇模型",
   "settings.providers.modeModels.description": "為特定模式覆寫預設模型。如果未設定，將使用全域預設模型。",
   "provider.custom.title": "自訂提供商",
@@ -561,7 +560,7 @@ export const dict = {
   "deviceAuth.toast.codeCopied": "驗證碼已複製到剪貼簿",
   "deviceAuth.toast.errorCopied": "錯誤已複製到剪貼簿",
   "deviceAuth.status.initiating": "正在啟動登入...",
-  "deviceAuth.title": "登入 Kilo Code",
+  "deviceAuth.title": "登入 Babel Code",
   "deviceAuth.step1": "步驟 1：開啟此 URL",
   "deviceAuth.action.copyUrl": "複製 URL",
   "deviceAuth.action.openBrowser": "開啟瀏覽器",
@@ -584,7 +583,7 @@ export const dict = {
 
   "profile.title": "個人資料",
   "profile.notLoggedIn": "尚未登入",
-  "profile.action.login": "使用 Kilo Code 登入",
+  "profile.action.login": "使用 Babel Code 登入",
   "profile.balance.title": "餘額",
   "profile.balance.refresh": "重新整理餘額",
   "profile.usage.title": "方案與用量",
@@ -651,9 +650,9 @@ export const dict = {
 
   "settings.experimental.title": "實驗性功能",
   "settings.language.title": "語言",
-  "settings.aboutKiloCode.title": "關於 Kilo Code",
+  "settings.aboutKiloCode.title": "關於 Babel Code",
 
-  "session.messages.welcome": "Kilo Code 是一個 AI 程式設計助手。讓它幫你建構功能、修復 bug 或解釋程式碼庫。",
+  "session.messages.welcome": "Babel Code 是一個 AI 程式設計助手。讓它幫你建構功能、修復 bug 或解釋程式碼庫。",
   "session.messages.scrollToBottom": "捲動至底部",
   "session.messages.initializing": "初始化中...",
   "session.messages.taskStarting": "啟動中...",
@@ -750,7 +749,7 @@ export const dict = {
   "settings.browser.headless.title": "無頭模式",
   "settings.browser.headless.description": "以無頭模式執行（無可見瀏覽器視窗）。",
 
-  "settings.language.description": "選擇 Kilo Code 介面的語言。「自動」使用 VS Code 的顯示語言。",
+  "settings.language.description": "選擇 Babel Code 介面的語言。「自動」使用 VS Code 的顯示語言。",
   "settings.language.auto": "自動（VS Code 語言）",
   "settings.language.current": "目前：",
 
@@ -1100,12 +1099,12 @@ export const dict = {
   "settings.legacyMigration.link": "從舊版遷移",
   "settings.aboutKiloCode.legacyMigration.title": "舊版遷移",
   "settings.aboutKiloCode.legacyMigration.description":
-    "從舊版 Kilo Code 安裝遷移設定，包括供應商 API 金鑰和預設模型。",
+    "從舊版 Babel Code 安裝遷移設定，包括供應商 API 金鑰和預設模型。",
   "settings.aboutKiloCode.rooImport.description": "從 Roo Code 安裝匯入對話歷史記錄。",
   "settings.aboutKiloCode.rooImport.button": "從 Roo Code 匯入工作階段",
 
   // Screen 1 — What's New
-  "migration.whatsNew.title": "Kilo Code 新功能",
+  "migration.whatsNew.title": "Babel Code 新功能",
   "migration.whatsNew.subtitle": "我們在更快、更高效的基礎上重新建構了擴充功能。",
   "migration.whatsNew.features.performance.title": "更快的 Agent 效能",
   "migration.whatsNew.features.performance.detail":

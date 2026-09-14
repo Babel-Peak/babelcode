@@ -322,7 +322,7 @@ type ContextRequestMessage =
   | { type: "requestTerminalContext"; requestId: string; sessionID?: string; agentManagerContext?: string }
 
 export class KiloProvider implements vscode.WebviewViewProvider, TelemetryPropertiesProvider {
-  public static readonly viewType = "kilo-code.SidebarProvider"
+  public static readonly viewType = "babel-code.SidebarProvider"
   private readonly instanceId = crypto.randomUUID()
 
   private webview: vscode.Webview | null = null
@@ -334,7 +334,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private loginAttempt = 0
   private isWebviewReady = false
   private readonly extensionVersion =
-    vscode.extensions.getExtension("kilocode.kilo-code")?.packageJSON?.version ?? "unknown"
+    vscode.extensions.getExtension("babelcode.babel-code")?.packageJSON?.version ?? "unknown"
   private cachedProvidersMessage: unknown = null
   /**
    * Provider API keys retained extension-side for authenticated model
@@ -441,6 +441,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private telemetryStateDisposable: vscode.Disposable | null = null
   private viewStateDisposable: vscode.Disposable | null = null
   private visibilityDisposable: vscode.Disposable | null = null
+  private viewDisposeDisposable: vscode.Disposable | null = null
   private autoApproveBridge: ReturnType<typeof createAutoApproveBridge> | null = null
   private readonly marketplaceRemove = createMarketplaceRemover()
 
@@ -471,6 +472,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     | null = null
 
   private createWorktreeHandler: ((baseBranch?: string, branchName?: string) => Promise<void>) | null = null
+
+  /** Invoked when a session is pruned, e.g. to close its browser preview page. */
+  onSessionPruned: ((sessionId: string) => void) | null = null
 
   private diffVirtualProvider: import("./DiffVirtualProvider").DiffVirtualProvider | undefined
   private diffViewerProvider: import("./diff/DiffViewerProvider").DiffViewerProvider | undefined
@@ -584,7 +588,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   getTelemetryProperties(): Record<string, unknown> {
     return {
-      appName: "kilo-code",
+      appName: "babel-code",
       appVersion: this.extensionVersion,
       platform: "vscode",
       editorName: vscode.env.appName,
@@ -618,10 +622,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   private openMarketplacePanel(directory: unknown): void {
     if (typeof directory === "string" && directory) {
-      vscode.commands.executeCommand("kilo-code.new.marketplaceButtonClicked", directory)
+      vscode.commands.executeCommand("babel-code.new.marketplaceButtonClicked", directory)
       return
     }
-    vscode.commands.executeCommand("kilo-code.new.marketplaceButtonClicked", this.projectDirectory)
+    vscode.commands.executeCommand("babel-code.new.marketplaceButtonClicked", this.projectDirectory)
   }
 
   // Strip metadata unused by the webview to keep session switches fast.
@@ -689,7 +693,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     // Re-send ready so the webview can recover after refresh.
     if (serverInfo) {
-      const langConfig = vscode.workspace.getConfiguration("kilo-code.new")
+      const langConfig = vscode.workspace.getConfiguration("babel-code.new")
       this.postMessage({
         type: "ready",
         serverInfo,
@@ -757,6 +761,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     this.setSidebarVisible(webviewView.visible)
     this.visibilityDisposable?.dispose()
+    this.viewDisposeDisposable?.dispose()
     this.visibilityDisposable = webviewView.onDidChangeVisibility(() => {
       this.setSidebarVisible(webviewView.visible)
       if (this.statsPoller) {
@@ -765,12 +770,20 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       }
       this.focusSession(webviewView.visible ? this.contextSessionID : undefined)
     })
+    // Closing the sidebar view (not just hiding it) disposes the webview;
+    // drop the stale reference so isChatOpen()/waitForReady() reflect it.
+    this.viewDisposeDisposable = webviewView.onDidDispose(() => {
+      if (this.webview === webviewView.webview) {
+        this.webview = null
+        this.isWebviewReady = false
+      }
+    })
     this.initializeConnection()
   }
 
   private setSidebarVisible(visible: boolean): void {
     this.setStreamVisibility(visible)
-    vscode.commands.executeCommand("setContext", "kilo-code.new.sidebarVisible", visible)
+    vscode.commands.executeCommand("setContext", "babel-code.new.sidebarVisible", visible)
     if (!visible && this.opts.focusContext) {
       void vscode.commands.executeCommand("setContext", this.opts.focusContext, false)
     }
@@ -1060,15 +1073,19 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       if (
         await handleSidebarWorktreeMessage(message, {
           post: (msg) => this.postMessage(msg),
-          openAgentManager: () => vscode.commands.executeCommand("kilo-code.new.agentManagerOpen"),
-          openAdvancedWorktree: () => vscode.commands.executeCommand("kilo-code.new.agentManager.advancedWorktree"),
+          openAgentManager: () => vscode.commands.executeCommand("babel-code.new.agentManagerOpen"),
+          openAdvancedWorktree: () => vscode.commands.executeCommand("babel-code.new.agentManager.advancedWorktree"),
           openChanges: (sessionId?: string, turnId?: string) =>
-            vscode.commands.executeCommand("kilo-code.new.showChanges", {
+            vscode.commands.executeCommand("babel-code.new.showChanges", {
               sessionId,
               turnId,
               directory: sessionId ? this.sessionGitDirectories.get(sessionId) : undefined,
             }),
-          openProfile: () => vscode.commands.executeCommand("kilo-code.new.profileButtonClicked"),
+          openProfile: () => vscode.commands.executeCommand("babel-code.new.profileButtonClicked"),
+          openBrowserPreview: () =>
+            vscode.commands.executeCommand("babel-code.new.browserPreview.open", {
+              sessionId: this.currentSession?.id,
+            }),
           currentSessionId: this.currentSession?.id,
           createWorktree: async (baseBranch, branchName) => {
             await this.createWorktreeHandler?.(baseBranch, branchName)
@@ -1201,10 +1218,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           }
           break
         case "openSettingsPanel":
-          vscode.commands.executeCommand("kilo-code.new.settingsButtonClicked", message.tab, message.projectId)
+          vscode.commands.executeCommand("babel-code.new.settingsButtonClicked", message.tab, message.projectId)
           break
         case "openKiloClaw":
-          vscode.commands.executeCommand("kilo-code.new.kiloClawOpen")
+          vscode.commands.executeCommand("babel-code.new.kiloClawOpen")
           break
         case "openVSCodeSettings":
           vscode.commands.executeCommand("workbench.action.openSettings", message.query)
@@ -1231,7 +1248,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         case "openSubAgentViewer":
           vscode.commands.executeCommand(
-            "kilo-code.new.openSubAgentViewer",
+            "babel-code.new.openSubAgentViewer",
             message.sessionID,
             message.title,
             this.getWorkspaceDirectory(message.parentSessionID),
@@ -1384,12 +1401,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         case "openSettingsTab":
           if (message.tab === "indexing") {
-            await vscode.commands.executeCommand("kilo-code.new.openIndexingSettings")
+            await vscode.commands.executeCommand("babel-code.new.openIndexingSettings")
           }
           break
         case "setLanguage":
           await vscode.workspace
-            .getConfiguration("kilo-code.new")
+            .getConfiguration("babel-code.new")
             .update("language", message.locale || undefined, vscode.ConfigurationTarget.Global)
           this.connectionService.notifyLanguageChanged(message.locale as string)
           break
@@ -1878,7 +1895,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.connectionState = this.connectionService.getConnectionState()
 
       if (serverInfo) {
-        const langConfig = vscode.workspace.getConfiguration("kilo-code.new")
+        const langConfig = vscode.workspace.getConfiguration("babel-code.new")
         this.postMessage({
           type: "ready",
           serverInfo,
@@ -2342,6 +2359,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * a session the backend has already deleted.
    */
   private pruneDeletedSession(sessionID: string): void {
+    this.onSessionPruned?.(sessionID)
     this.removedSessionIds.add(sessionID)
     this.trackedSessionIds.delete(sessionID)
     this.openSessionIds.delete(sessionID)
@@ -2540,7 +2558,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
             continue
           }
           this.storedProviderKeys = storedKeys
-          const settings = vscode.workspace.getConfiguration("kilo-code.new.model")
+          const settings = vscode.workspace.getConfiguration("babel-code.new.model")
           const message = {
             type: "providersLoaded",
             providers: indexProvidersById(response.all),
@@ -3101,7 +3119,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /** Read attention settings from VS Code config and push to webview. */
   private sendNotificationSettings(): void {
-    const attention = vscode.workspace.getConfiguration("kilo-code.new.attention")
+    const attention = vscode.workspace.getConfiguration("babel-code.new.attention")
     this.postMessage({
       type: "notificationSettingsLoaded",
       settings: {
@@ -3112,7 +3130,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   private sendTimelineSetting(): void {
-    const config = vscode.workspace.getConfiguration("kilo-code.new")
+    const config = vscode.workspace.getConfiguration("babel-code.new")
     this.postMessage({
       type: "timelineSettingLoaded",
       visible: config.get<boolean>("showTaskTimeline", true),
@@ -3692,15 +3710,15 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   private maxCostSetting(): number {
-    return this.setMaxCost(vscode.workspace.getConfiguration("kilo-code.new").get<number>("maxCost", 0))
+    return this.setMaxCost(vscode.workspace.getConfiguration("babel-code.new").get<number>("maxCost", 0))
   }
 
   private commitMessageLanguageSetting(): string {
-    return vscode.workspace.getConfiguration("kilo-code.new").get<string>("languageCommitMessage", "sync")
+    return vscode.workspace.getConfiguration("babel-code.new").get<string>("languageCommitMessage", "sync")
   }
 
   private multiProjectSetting(): boolean {
-    return vscode.workspace.getConfiguration("kilo-code.new.experimental").get<boolean>("multiProject", false)
+    return vscode.workspace.getConfiguration("babel-code.new.experimental").get<boolean>("multiProject", false)
   }
 
   private async sendIndexingSettings(projectId?: string) {
@@ -4372,13 +4390,13 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /**
    * Handle a generic setting update from the webview.
-   * The key uses dot notation relative to `kilo-code.new` (e.g. "browserAutomation.enabled").
+   * The key uses dot notation relative to `babel-code.new` (e.g. "browserAutomation.enabled").
    */
   private async handleUpdateSetting(key: string, value: unknown): Promise<void> {
     if (key === "maxCost") {
       const normalized = this.setMaxCost(value)
       await vscode.workspace
-        .getConfiguration("kilo-code.new")
+        .getConfiguration("babel-code.new")
         .update("maxCost", normalized, vscode.ConfigurationTarget.Global)
       for (const sid of this.trackedSessionIds) {
         const oldLimit = this.activeAlerts.get(sid)
@@ -4395,7 +4413,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (section === "autocomplete" && !validAutocompleteSetting(leaf, value)) return
     if (section === "indexing" && !validIndexingSetting(leaf, value)) return
     if (section === "chat" && !validChatSetting(leaf, value)) return
-    const config = vscode.workspace.getConfiguration(`kilo-code.new${section ? `.${section}` : ""}`)
+    const config = vscode.workspace.getConfiguration(`babel-code.new${section ? `.${section}` : ""}`)
     // Normalize a webview-side clear to `undefined` so VS Code removes the
     // key from settings.json rather than persisting a literal `null`. This
     // lets the runtime fall back to the resolved default.
@@ -4405,22 +4423,22 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   /**
-   * Reset all "kilo-code.new.*" extension settings to their defaults by reading
+   * Reset all "babel-code.new.*" extension settings to their defaults by reading
    * contributes.configuration from the extension's package.json at runtime.
-   * Only resets settings under the "kilo-code.new." namespace to avoid touching
+   * Only resets settings under the "babel-code.new." namespace to avoid touching
    * settings from the previous version of the extension which shares the same
-   * extension ID and "kilo-code.*" namespace.
+   * extension ID and "babel-code.*" namespace.
    */
   private async handleResetAllSettings(): Promise<void> {
     const confirmed = await vscode.window.showWarningMessage(
-      "Reset all Kilo Code extension settings to defaults?",
+      "Reset all Babel Code extension settings to defaults?",
       { modal: true },
       "Reset",
     )
     if (confirmed !== "Reset") return
 
-    const prefix = "kilo-code.new."
-    const ext = vscode.extensions.getExtension("kilocode.kilo-code")
+    const prefix = "babel-code.new."
+    const ext = vscode.extensions.getExtension("babelcode.babel-code")
     const properties = ext?.packageJSON?.contributes?.configuration?.properties as Record<string, unknown> | undefined
     if (!properties) return
 
@@ -4460,14 +4478,14 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Re-fetch notifications to reflect cleared dismissed IDs
     await this.fetchAndSendNotifications()
 
-    vscode.window.showInformationMessage("Kilo Code settings have been reset to defaults.")
+    vscode.window.showInformationMessage("Babel Code settings have been reset to defaults.")
   }
 
   /**
    * Read the current browser automation settings and push them to the webview.
    */
   private sendBrowserSettings(): void {
-    const config = vscode.workspace.getConfiguration("kilo-code.new.browserAutomation")
+    const config = vscode.workspace.getConfiguration("babel-code.new.browserAutomation")
     this.postMessage({
       type: "browserSettingsLoaded",
       settings: {
@@ -4482,7 +4500,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Read the current Claude Code compatibility setting and push it to the webview.
    */
   private sendClaudeCompatSetting(): void {
-    const enabled = vscode.workspace.getConfiguration("kilo-code.new").get<boolean>("claudeCodeCompat", false)
+    const enabled = vscode.workspace.getConfiguration("babel-code.new").get<boolean>("claudeCodeCompat", false)
     this.postMessage({
       type: "claudeCompatSettingLoaded",
       enabled: enabled ?? false,
@@ -4902,6 +4920,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     ) {
       this.sync(sid, directory ?? this.getWorkspaceDirectory(sid))
     }
+  }
+
+  /** True while this provider has a live chat webview (sidebar view or tab panel resolved). */
+  public isChatOpen(): boolean {
+    return this.webview !== null
   }
 
   /** Wait until the webview has sent "webviewReady". Resolves immediately when already ready. */
@@ -5335,7 +5358,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       styleUri: webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "dist", "webview.css")),
       iconsBaseUri: webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "assets", "icons")),
       workerUri: webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "dist", "shiki-worker.js")),
-      title: "Kilo Code",
+      title: "Babel Code",
       port: this.connectionService.getServerInfo()?.port,
       extraStyles: `.container { height: 100vh; }`,
       // Dedicated single-purpose panels (Settings, Profile, Sub-Agent Viewer)
@@ -5428,6 +5451,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     this.unsubscribeSandboxPreference?.()
     this.viewStateDisposable?.dispose()
     this.visibilityDisposable?.dispose()
+    this.viewDisposeDisposable?.dispose()
     this.webviewMessageDisposable?.dispose()
     this.autocompleteConfigDisposable?.dispose()
     this.indexingConfigDisposable?.dispose()

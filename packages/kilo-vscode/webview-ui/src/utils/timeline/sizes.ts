@@ -14,6 +14,11 @@ const BAR_W = 12
 const MIN_H = 8
 const PAD = 4
 
+/** Lane below the bars holding the viewport indicator line. */
+export const INDICATOR_GAP = 4
+export const INDICATOR_H = 2
+export const TIMELINE_HEIGHT = MAX_HEIGHT + INDICATOR_GAP + INDICATOR_H
+
 export interface BarSize {
   width: number
   height: number

@@ -99,6 +99,11 @@ export const Info = Schema.Struct({
       Schema.Struct({
         apiKey: Schema.optional(Schema.String),
         baseURL: Schema.optional(Schema.String),
+        // kilocode_change start
+        useEnv: Schema.optional(Schema.Boolean).annotate({
+          description: "Prefer provider credentials from environment variables over configured credentials",
+        }),
+        // kilocode_change end
         enterpriseUrl: Schema.optional(Schema.String).annotate({
           description: "GitHub Enterprise URL for copilot authentication",
         }),

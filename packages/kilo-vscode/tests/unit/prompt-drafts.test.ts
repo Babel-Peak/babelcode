@@ -1,6 +1,12 @@
 import { beforeEach, describe, it, expect } from "bun:test"
 import { createEffect, createRoot, createSignal, on } from "solid-js"
-import { deleteDraftsForSession, drafts, imageDrafts, reviewDrafts } from "../../webview-ui/src/utils/draft-store"
+import {
+  codeContextDrafts,
+  deleteDraftsForSession,
+  drafts,
+  imageDrafts,
+  reviewDrafts,
+} from "../../webview-ui/src/utils/draft-store"
 import {
   createdDraftKey,
   movePromptDraft,
@@ -13,6 +19,7 @@ beforeEach(() => {
   drafts.clear()
   reviewDrafts.clear()
   imageDrafts.clear()
+  codeContextDrafts.clear()
 })
 
 describe("deleteDraftsForSession", () => {
@@ -150,29 +157,34 @@ describe("createdDraftKey", () => {
 })
 
 describe("movePromptDraft", () => {
-  it("moves text, review comments, and images to the created session", () => {
+  it("moves text, review comments, images, and code contexts to the created session", () => {
     const source = scopeDraftKey("prompt:default", createdDraftKey(undefined, true))
     const target = scopeDraftKey("prompt:default", sessionDraftKey("session-1"))
     const comment = { id: "comment-1", body: "Keep this review note" }
     const image = { id: "image-1", dataUrl: "data:image/png;base64,abc" }
+    const ctx = { id: "ctx-1", path: "file.ts", startLine: 1, endLine: 5, text: "code" }
     const text = new Map([[source, "Keep this prompt"]])
     const comments = new Map([[source, [comment]]])
     const images = new Map([[source, [image]]])
+    const contexts = new Map([[source, [ctx]]])
     const scrolls = new Map([[source, 128]])
 
-    expect(movePromptDraft({ text, comments, images, scrolls }, source, target)).toEqual({
+    expect(movePromptDraft({ text, comments, images, scrolls, contexts }, source, target)).toEqual({
       text: "Keep this prompt",
       comments: [comment],
       images: [image],
       scroll: 128,
+      contexts: [ctx],
     })
     expect(text.get(target)).toBe("Keep this prompt")
     expect(comments.get(target)).toEqual([comment])
     expect(images.get(target)).toEqual([image])
+    expect(contexts.get(target)).toEqual([ctx])
     expect(scrolls.get(target)).toBe(128)
     expect(text.has(source)).toBe(false)
     expect(comments.has(source)).toBe(false)
     expect(images.has(source)).toBe(false)
+    expect(contexts.has(source)).toBe(false)
     expect(scrolls.has(source)).toBe(false)
   })
 })

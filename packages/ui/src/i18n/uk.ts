@@ -239,6 +239,7 @@ export const dict: Record<string, string> = {
   "ui.mermaid.renderError": "Не вдалося відтворити Mermaid: {{message}}",
   "ui.mermaid.rendering": "Відтворення діаграми Mermaid...",
   "ui.message.deleteQueued": "Видалити повідомлення з черги",
+  "ui.message.sendNow": "Зупинити та надіслати", // kilocode_change
   "ui.messagePart.mcp.input": "Вхід",
   "ui.messagePart.mcp.output": "Вихід",
   "ui.question.answer.dismissed": "Dismissed",

@@ -5,11 +5,17 @@ import {
   buildHighlightSegments,
   atEnd,
   insertSpacedText,
+  findTokenDeletionRange,
   isPromptBlocked,
   isPromptBusy,
   isSuggesting,
   isQuestioning,
   isPathMention,
+  isInlineContextToken,
+  codeContextToken,
+  browserElementToken,
+  formatCodeContext,
+  buildPromptMessage,
   applySandboxState,
   applySandboxStates,
   memoryRest,
@@ -359,5 +365,211 @@ describe("memoryRest", () => {
     // remember/correct/forget/auto/purge consume their text, so nothing remains.
     expect(memoryRest(parseMemoryCommand("/memory remember hello")!)).toBe("")
     expect(memoryRest(parseMemoryCommand("/memory auto on")!)).toBe("")
+  })
+})
+
+describe("codeContextToken & browserElementToken", () => {
+  it("formats code context token with line range", () => {
+    const token = codeContextToken({
+      id: "1",
+      path: "src/components/chat/PromptInput.tsx",
+      startLine: 10,
+      endLine: 20,
+      text: "code",
+    })
+    expect(token).toBe("[file:PromptInput.tsx:10-20]")
+  })
+
+  it("formats code context token with single line", () => {
+    const token = codeContextToken({
+      id: "1",
+      path: "src/foo.ts",
+      startLine: 42,
+      endLine: 42,
+      text: "code",
+    })
+    expect(token).toBe("[file:foo.ts:42]")
+  })
+
+  it("formats browser element token", () => {
+    const token = browserElementToken({
+      id: "1",
+      label: "img.floating_element",
+      text: "Attached Element...",
+    })
+    expect(token).toBe("[el:img.floating_element]")
+  })
+
+  it("identifies inline context tokens", () => {
+    expect(isInlineContextToken("[file:PromptInput.tsx:10-20]")).toBe(true)
+    expect(isInlineContextToken("[el:img.floating_element]")).toBe(true)
+    expect(isInlineContextToken("@src/foo.ts")).toBe(false)
+    expect(isInlineContextToken("normal text")).toBe(false)
+  })
+})
+
+describe("formatCodeContext", () => {
+  it("formats code context block with path, line range, and fenced code", () => {
+    const formatted = formatCodeContext({
+      id: "1",
+      path: "src/foo.ts",
+      startLine: 5,
+      endLine: 10,
+      text: "const a = 1",
+    })
+    expect(formatted).toBe("src/foo.ts:5-10\n```\nconst a = 1\n```")
+  })
+})
+
+describe("buildPromptMessage with inline tokens", () => {
+  const codeItem = {
+    id: "1",
+    path: "src/App.tsx",
+    startLine: 10,
+    endLine: 20,
+    text: "const a = 1",
+  }
+  const elItem = {
+    id: "2",
+    label: "img.floating_element",
+    text: "Attached Element Context from Browser Preview\nElement: img.floating_element",
+  }
+
+  it("expands code context and element tokens in-place in the middle of text", () => {
+    const draft = "Please check [el:img.floating_element] and compare with [file:App.tsx:10-20] carefully."
+    const result = buildPromptMessage(draft, [codeItem], "", [elItem])
+    expect(result).toContain("Please check \n\nAttached Element Context")
+    expect(result).toContain("and compare with \n\nsrc/App.tsx:10-20\n```\nconst a = 1\n```\n\n carefully.")
+  })
+
+  it("expands a single inline token to its trimmed content", () => {
+    const draft = "[el:img.floating_element]"
+    const result = buildPromptMessage(draft, [], "", [elItem])
+    expect(result).toBe("Attached Element Context from Browser Preview\nElement: img.floating_element")
+  })
+
+  it("omits tokens that were deleted from the draft", () => {
+    const draft = "Only text here"
+    const result = buildPromptMessage(draft, [codeItem], "", [elItem])
+    expect(result).toBe("Only text here")
+  })
+
+  it("combines in-place expanded tokens with review markdown prefix", () => {
+    const draft = "Fix [el:img.floating_element]"
+    const review = "Review comments:\n- Fix this"
+    const result = buildPromptMessage(draft, [], review, [elItem])
+    expect(result.startsWith("Review comments:\n- Fix this\n\nFix")).toBe(true)
+  })
+})
+
+describe("buildHighlightSegments with inline tokens", () => {
+  it("highlights bracketed context tokens in the middle of text", () => {
+    const text = "Check [el:img.floating_element] and @foo.ts now"
+    const paths = new Set(["foo.ts", "[el:img.floating_element]"])
+    const result = buildHighlightSegments(text, paths)
+    expect(result).toEqual([
+      { text: "Check ", highlight: false },
+      { text: "[el:img.floating_element]", highlight: true },
+      { text: " and ", highlight: false },
+      { text: "@foo.ts", highlight: true },
+      { text: " now", highlight: false },
+    ])
+  })
+})
+
+describe("findTokenDeletionRange", () => {
+  const tokens = new Set(["src/foo.ts", "[file:App.tsx:1-10]", "[el:img.floating_element]"])
+
+  describe("bracketed context tokens [file:...] and [el:...]", () => {
+    it("deletes entire token when Backspace is pressed at end of token", () => {
+      const text = "check [file:App.tsx:1-10] now"
+      const cursor = 25 // right at ']'
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Backspace")
+      expect(range).toEqual({ start: 6, end: 26 })
+      expect(text.slice(range!.start, range!.end)).toBe("[file:App.tsx:1-10] ")
+    })
+
+    it("deletes entire token when Backspace is pressed on space after token", () => {
+      const text = "check [file:App.tsx:1-10] now"
+      const cursor = 26 // after space
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Backspace")
+      expect(range).toEqual({ start: 6, end: 26 })
+    })
+
+    it("deletes entire token when Backspace is pressed inside token", () => {
+      const text = "check [file:App.tsx:1-10] now"
+      const cursor = 15 // inside "App.tsx"
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Backspace")
+      expect(range).toEqual({ start: 6, end: 26 })
+    })
+
+    it("deletes entire token when Delete is pressed at start of token", () => {
+      const text = "check [el:img.floating_element] now"
+      const cursor = 6 // right before '['
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Delete")
+      expect(range).toEqual({ start: 6, end: 32 })
+      expect(text.slice(range!.start, range!.end)).toBe("[el:img.floating_element] ")
+    })
+
+    it("deletes entire token when Delete is pressed inside token", () => {
+      const text = "check [el:img.floating_element] now"
+      const cursor = 15 // inside "img"
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Delete")
+      expect(range).toEqual({ start: 6, end: 32 })
+    })
+
+    it("cleans leading space when deleting token at end of text", () => {
+      const text = "look at [el:img.floating_element]"
+      const cursor = text.length
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Backspace")
+      expect(range).toEqual({ start: 7, end: 33 })
+      expect(text.slice(range!.start, range!.end)).toBe(" [el:img.floating_element]")
+    })
+  })
+
+  describe("@mentions", () => {
+    it("deletes entire mention when Backspace is pressed at end", () => {
+      const text = "see @src/foo.ts here"
+      const cursor = 15 // after "ts"
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Backspace")
+      expect(range).toEqual({ start: 4, end: 16 })
+      expect(text.slice(range!.start, range!.end)).toBe("@src/foo.ts ")
+    })
+
+    it("deletes entire mention when Backspace is pressed inside mention", () => {
+      const text = "see @src/foo.ts here"
+      const cursor = 8 // inside "@src/foo"
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Backspace")
+      expect(range).toEqual({ start: 4, end: 16 })
+    })
+
+    it("deletes entire mention when Delete is pressed at start", () => {
+      const text = "see @src/foo.ts here"
+      const cursor = 4 // at '@'
+      const range = findTokenDeletionRange(text, cursor, cursor, tokens, "Delete")
+      expect(range).toEqual({ start: 4, end: 16 })
+    })
+  })
+
+  describe("selection expansion", () => {
+    it("expands selection to entire token when selection overlaps token partially", () => {
+      const text = "check [file:App.tsx:1-10] now"
+      // User selected "App.tsx" (index 12 to 19)
+      const range = findTokenDeletionRange(text, 12, 19, tokens, "Backspace")
+      expect(range).toEqual({ start: 6, end: 25 })
+    })
+  })
+
+  describe("normal text", () => {
+    it("returns null when cursor is on normal text with no token", () => {
+      const text = "hello world"
+      expect(findTokenDeletionRange(text, 5, 5, tokens, "Backspace")).toBeNull()
+      expect(findTokenDeletionRange(text, 0, 0, tokens, "Delete")).toBeNull()
+    })
+
+    it("returns null when token set is empty", () => {
+      const text = "[file:App.tsx:1-10]"
+      expect(findTokenDeletionRange(text, 5, 5, new Set(), "Backspace")).toBeNull()
+    })
   })
 })

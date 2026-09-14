@@ -357,7 +357,6 @@ export const dict = {
   "settings.providers.section.connected": "ارائه‌دهندگان متصل",
   "settings.providers.connected.empty": "هیچ ارائه‌دهنده متصلی وجود ندارد",
   "settings.providers.section.popular": "ارائه‌دهندگان محبوب",
-  "settings.providers.tag.gateway": "Gateway",
   "settings.providers.tag.environment": "محیط",
   "settings.providers.tag.config": "پیکربندی",
   "settings.providers.tag.chatgpt": "ChatGPT",
@@ -539,7 +538,7 @@ export const dict = {
   "deviceAuth.toast.codeCopied": "کد در کلیپ‌بورد کپی شد",
   "deviceAuth.toast.errorCopied": "خطا در کلیپ‌بورد کپی شد",
   "deviceAuth.status.initiating": "در حال شروع ورود...",
-  "deviceAuth.title": "ورود به Kilo Code",
+  "deviceAuth.title": "ورود به Babel Code",
   "deviceAuth.step1": "مرحله ۱: این URL را باز کنید",
   "deviceAuth.action.copyUrl": "کپی URL",
   "deviceAuth.action.openBrowser": "باز کردن مرورگر",
@@ -562,7 +561,7 @@ export const dict = {
 
   "profile.title": "پروفایل",
   "profile.notLoggedIn": "وارد نشده‌اید",
-  "profile.action.login": "ورود با Kilo Code",
+  "profile.action.login": "ورود با Babel Code",
   "profile.balance.title": "موجودی",
   "profile.balance.refresh": "بازخوانی موجودی",
   "profile.usage.title": "طرح‌ها و میزان استفاده",
@@ -666,10 +665,10 @@ export const dict = {
   "settings.indexing.tuning.description": "پارامتر پیشرفته جستجو و دسته‌بندی.",
   "settings.experimental.title": "آزمایشی",
   "settings.language.title": "زبان",
-  "settings.aboutKiloCode.title": "درباره Kilo Code",
+  "settings.aboutKiloCode.title": "درباره Babel Code",
 
   "session.messages.welcome":
-    "Kilo Code یک دستیار هوش مصنوعی برای کدنویسی است. از آن بخواهید ویژگی‌ها بسازد، باگ‌ها را رفع کند یا کدبیس شما را توضیح دهد.",
+    "Babel Code یک دستیار هوش مصنوعی برای کدنویسی است. از آن بخواهید ویژگی‌ها بسازد، باگ‌ها را رفع کند یا کدبیس شما را توضیح دهد.",
   "session.messages.scrollToBottom": "رفتن به پایین",
   "session.messages.initializing": "در حال راه‌اندازی...",
   "session.messages.taskStarting": "در حال شروع...",
@@ -697,13 +696,12 @@ export const dict = {
   "session.costAlert.continue": "ادامه",
   "session.costAlert.question": "هزینه این جلسه از آستانه هشدار {{limit}} شما فراتر رفت و {{cost}} شد. ادامه می‌دهید؟",
   "session.costAlert.stop": "توقف",
-  "sidebar.topBar.label": "پیمایش Kilo Code",
+  "sidebar.topBar.label": "پیمایش Babel Code",
   "sidebar.topBar.newTask": "وظیفه جدید",
   "sidebar.topBar.history": "تاریخچه",
   "sidebar.topBar.agentManager": "مدیر عامل‌ها",
-  "sidebar.topBar.kiloClaw": "KiloClaw",
   "sidebar.topBar.marketplace": "بازارچه",
-  "sidebar.topBar.profile": "پروفایل",
+  "sidebar.topBar.browser": "پیش‌نمایش مرورگر",
   "sidebar.topBar.settings": "تنظیمات",
   "sidebar.session.newSession": "جلسه جدید",
   "sidebar.session.newSession.tooltip": "یک مکالمه تازه شروع کنید و جلسه فعلی را دست‌نخورده نگه دارید.",
@@ -804,7 +802,7 @@ export const dict = {
   "settings.browser.headless.description": "در حالت headless اجرا شود (بدون پنجره مرورگر قابل مشاهده).",
 
   "settings.language.description":
-    "زبان رابط کاربری Kilo Code را انتخاب کنید. «Auto» از زبان نمایشی VS Code شما استفاده می‌کند.",
+    "زبان رابط کاربری Babel Code را انتخاب کنید. «Auto» از زبان نمایشی VS Code شما استفاده می‌کند.",
   "settings.language.auto": "خودکار (زبان VS Code)",
   "settings.language.current": "فعلی:",
 
@@ -1133,6 +1131,7 @@ export const dict = {
   "settings.models.hidePromptTraining.title": "پنهان کردن مدل‌های آموزش پرامپت",
   "settings.models.hidePromptTraining.description":
     "مدل‌های Kilo Gateway را که ارائه‌دهندگانشان ممکن است از پرامپت‌های شما برای آموزش استفاده کنند پنهان کنید.",
+  "settings.providers.modeModels.variant": "استدلال پیش‌فرض",
   "settings.providers.modeModels": "مدل به ازای حالت",
   "settings.providers.modeModels.description":
     "مدل پیش‌فرض را برای حالت‌های خاص بازنویسی کنید. در صورت عدم تنظیم، از مدل پیش‌فرض سراسری استفاده می‌شود.",
@@ -1156,12 +1155,12 @@ export const dict = {
   "settings.legacyMigration.link": "انتقال از نسخه قدیمی",
   "settings.aboutKiloCode.legacyMigration.title": "انتقال از نسخه قدیمی",
   "settings.aboutKiloCode.legacyMigration.description":
-    "تنظیمات را از نصب قبلی Kilo Code منتقل کنید، از جمله کلیدهای API ارائه‌دهنده و مدل پیش‌فرض.",
+    "تنظیمات را از نصب قبلی Babel Code منتقل کنید، از جمله کلیدهای API ارائه‌دهنده و مدل پیش‌فرض.",
   "settings.aboutKiloCode.rooImport.description": "تاریخچه مکالمات را از یک نصب Roo Code وارد کنید.",
   "settings.aboutKiloCode.rooImport.button": "وارد کردن جلسات از Roo Code",
 
   // Screen 1 — What's New
-  "migration.whatsNew.title": "تازه‌های Kilo Code",
+  "migration.whatsNew.title": "تازه‌های Babel Code",
   "migration.whatsNew.subtitle": "افزونه را بر پایه‌ای سریع‌تر و کارآمدتر بازسازی کرده‌ایم.",
   "migration.whatsNew.features.performance.title": "عملکرد سریع‌تر عامل",
   "migration.whatsNew.features.performance.detail":

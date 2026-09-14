@@ -299,13 +299,12 @@ export const dict = {
   "session.messages.loadEarlier": "Eerdere berichten laden",
   "session.messages.loading": "Berichten laden...",
 
-  "sidebar.topBar.label": "Kilo Code-navigatie",
+  "sidebar.topBar.label": "Babel Code-navigatie",
   "sidebar.topBar.newTask": "Nieuwe Taak",
   "sidebar.topBar.history": "Geschiedenis",
   "sidebar.topBar.agentManager": "Agent Manager",
-  "sidebar.topBar.kiloClaw": "KiloClaw",
   "sidebar.topBar.marketplace": "Marketplace",
-  "sidebar.topBar.profile": "Profiel",
+  "sidebar.topBar.browser": "Browservoorbeeld",
   "sidebar.topBar.settings": "Instellingen",
   "sidebar.session.newSession": "Nieuwe Sessie",
   "sidebar.session.newSession.tooltip": "Start een nieuw gesprek terwijl je de huidige sessie intact houdt.",
@@ -394,7 +393,6 @@ export const dict = {
   "settings.providers.section.connected": "Gekoppelde providers",
   "settings.providers.connected.empty": "Geen gekoppelde providers",
   "settings.providers.section.popular": "Populaire providers",
-  "settings.providers.tag.gateway": "Gateway",
   "settings.providers.tag.environment": "Omgeving",
   "settings.providers.tag.config": "Config",
   "settings.providers.tag.chatgpt": "ChatGPT",
@@ -579,7 +577,7 @@ export const dict = {
   "deviceAuth.toast.codeCopied": "Code gekopieerd naar klembord",
   "deviceAuth.toast.errorCopied": "Fout gekopieerd naar klembord",
   "deviceAuth.status.initiating": "Inloggen starten...",
-  "deviceAuth.title": "Meld je aan bij Kilo Code",
+  "deviceAuth.title": "Meld je aan bij Babel Code",
   "deviceAuth.step1": "Stap 1: Open deze URL",
   "deviceAuth.action.copyUrl": "Kopieer URL",
   "deviceAuth.action.openBrowser": "Open Browser",
@@ -602,7 +600,7 @@ export const dict = {
 
   "profile.title": "Profiel",
   "profile.notLoggedIn": "Niet ingelogd",
-  "profile.action.login": "Inloggen met Kilo Code",
+  "profile.action.login": "Inloggen met Babel Code",
   "profile.balance.title": "Saldo",
   "profile.balance.refresh": "Saldo vernieuwen",
   "profile.usage.title": "Abonnementen en gebruik",
@@ -706,10 +704,10 @@ export const dict = {
 
   "settings.experimental.title": "Experimenteel",
   "settings.language.title": "Taal",
-  "settings.aboutKiloCode.title": "Over Kilo Code",
+  "settings.aboutKiloCode.title": "Over Babel Code",
 
   "session.messages.welcome":
-    "Kilo Code is een AI-codeerassistent. Vraag het om features te bouwen, bugs op te lossen of je codebase uit te leggen.",
+    "Babel Code is een AI-codeerassistent. Vraag het om features te bouwen, bugs op te lossen of je codebase uit te leggen.",
   "session.messages.scrollToBottom": "Scroll naar beneden",
   "session.messages.initializing": "Initialiseren...",
   "session.messages.taskStarting": "Starten...",
@@ -815,7 +813,7 @@ export const dict = {
   "settings.browser.headless.title": "Headless Modus",
   "settings.browser.headless.description": "Draai in headless modus (geen zichtbaar browservenster).",
 
-  "settings.language.description": 'Kies de taal voor de Kilo Code UI. "Auto" gebruikt je VS Code schermtaal.',
+  "settings.language.description": 'Kies de taal voor de Babel Code UI. "Auto" gebruikt je VS Code schermtaal.',
   "settings.language.auto": "Auto (VS Code taal)",
   "settings.language.current": "Huidig:",
 
@@ -1121,6 +1119,7 @@ export const dict = {
   "settings.models.hidePromptTraining.title": "Modellen die prompts voor training gebruiken verbergen",
   "settings.models.hidePromptTraining.description":
     "Verberg Kilo Gateway-modellen waarvan providers je prompts mogelijk voor training gebruiken.",
+  "settings.providers.modeModels.variant": "Standaard redenering",
   "settings.providers.modeModels": "Model per Modus",
   "settings.providers.modeModels.description":
     "Overschrijf het standaard model voor specifieke modi. Indien niet ingesteld, wordt het globale standaard model gebruikt.",
@@ -1144,12 +1143,12 @@ export const dict = {
   "settings.legacyMigration.link": "Migreer van Legacy Versie",
   "settings.aboutKiloCode.legacyMigration.title": "Legacy Migratie",
   "settings.aboutKiloCode.legacyMigration.description":
-    "Migreer instellingen van een eerdere installatie van Kilo Code, inclusief provider API-sleutels en standaard model.",
+    "Migreer instellingen van een eerdere installatie van Babel Code, inclusief provider API-sleutels en standaard model.",
   "settings.aboutKiloCode.rooImport.description": "Importeer gespreksgeschiedenis van een Roo Code installatie.",
   "settings.aboutKiloCode.rooImport.button": "Sessies importeren uit Roo Code",
 
   // Screen 1 — What's New
-  "migration.whatsNew.title": "Wat is er Nieuw in Kilo Code",
+  "migration.whatsNew.title": "Wat is er Nieuw in Babel Code",
   "migration.whatsNew.subtitle": "We hebben de extensie opnieuw opgebouwd op een snellere, efficiëntere basis.",
   "migration.whatsNew.features.performance.title": "Snellere Agent Prestaties",
   "migration.whatsNew.features.performance.detail":

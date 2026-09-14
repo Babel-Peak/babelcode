@@ -75,3 +75,24 @@ export function navigate(index: number, count: number, key: string) {
   if (key === "ArrowRight") return Math.min(count - 1, index < 0 ? 0 : index + 1)
   return index
 }
+
+/**
+ * Nearest bar index for one edge of the visible transcript span. A message
+ * without renderable bars (e.g. attachments only) resolves to the first bar
+ * at/after it for the viewport start, or the last bar at/before it for the
+ * viewport end, so the indicator never leaves a gap for hidden messages.
+ */
+export function spanIndex(bars: Array<{ msgId: string }>, order: Map<string, number>, id: string, fromStart: boolean) {
+  const pos = order.get(id)
+  if (pos === undefined) return -1
+  if (fromStart) {
+    for (let idx = 0; idx < bars.length; idx++) {
+      if ((order.get(bars[idx]!.msgId) ?? pos + 1) >= pos) return idx
+    }
+    return -1
+  }
+  for (let idx = bars.length - 1; idx >= 0; idx--) {
+    if ((order.get(bars[idx]!.msgId) ?? pos - 1) <= pos) return idx
+  }
+  return -1
+}

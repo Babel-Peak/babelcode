@@ -15,6 +15,8 @@ interface Options {
   session: Accessor<string | undefined>
   agent: (sessionID?: string) => string
   find: (selection: ModelSelection) => Model | undefined
+  /** Per-agent default reasoning from config (config.agent[agent].variant). */
+  configVariant: (agent: string) => string | undefined
   post: (message: Message) => void
   listen: (handler: (message: ExtensionMessage) => void) => () => void
 }
@@ -37,7 +39,13 @@ export function createSessionVariants(options: Options) {
     if (!selection) return undefined
     const variants = list(sid)
     if (variants.length === 0) return undefined
-    return getVariant(options.selections(), selection, variants, options.agent(sid), sid)
+    // Fall back to the per-mode config default when nothing (or no explicit
+    // choice) is stored — the backend applies the same default server-side,
+    // so the composer displays the variant that will actually be used.
+    return (
+      getVariant(options.selections(), selection, variants, options.agent(sid), sid) ??
+      preserveVariant(options.configVariant(options.agent(sid)), variants)
+    )
   }
 
   const select = (value: string | undefined, sessionID?: string) => {

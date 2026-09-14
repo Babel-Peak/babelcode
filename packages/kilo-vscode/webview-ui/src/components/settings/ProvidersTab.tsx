@@ -37,8 +37,6 @@ const ProvidersTab: Component = () => {
 
   onCleanup(action.dispose)
 
-  const kiloLoggedIn = createMemo(() => !!provider.authStates()[KILO_PROVIDER_ID])
-
   const connectedProviders = createMemo(() => {
     const ids = visibleConnectedIds(provider.connected(), provider.authStates())
     const all = provider.providers()
@@ -61,7 +59,6 @@ const ProvidersTab: Component = () => {
   })
 
   const disabledProviders = createMemo(() => config().disabled_providers ?? [])
-  const disabledIds = createMemo(() => new Set(disabledProviders()))
   const providers = createMemo(() => providersWithKiloFallback(provider.providers()))
   const disabledOptions = createMemo(() => disabledProviderOptions(providers(), disabledProviders()))
 
@@ -162,42 +159,6 @@ const ProvidersTab: Component = () => {
 
   return (
     <div>
-      <Show when={!disabledIds().has(KILO_PROVIDER_ID)}>
-        {/* Kilo Gateway — always at the top, not editable */}
-        <Card>
-          <div
-            style={{
-              display: "flex",
-              "align-items": "center",
-              gap: "12px",
-              "min-height": "56px",
-              padding: "12px 0",
-            }}
-          >
-            <ProviderIcon id={providerIcon(KILO_PROVIDER_ID)} width={20} height={20} />
-            <span
-              style={{
-                "font-size": "var(--kilo-font-size-14)",
-                "font-weight": "500",
-                color: "var(--vscode-foreground)",
-              }}
-            >
-              Kilo Gateway
-            </span>
-            <Show
-              when={kiloLoggedIn()}
-              fallback={
-                <Button size="small" variant="secondary" onClick={() => server.goToLogin()}>
-                  {language.t("common.signIn")}
-                </Button>
-              }
-            >
-              <Tag>{language.t("settings.providers.tag.gateway")}</Tag>
-            </Show>
-          </div>
-        </Card>
-      </Show>
-
       {/* Connected providers (excluding Kilo) */}
       <h4 style={{ "margin-top": "16px", "margin-bottom": "8px" }}>
         {language.t("settings.providers.section.connected")}

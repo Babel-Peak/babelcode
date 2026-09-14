@@ -49,7 +49,7 @@ export class VscodeHost implements Host {
     worktreeDirectories?: () => string[]
   }): PanelContext {
     const panel = vscode.window.createWebviewPanel(
-      "kilo-code.new.AgentManagerPanel",
+      "babel-code.new.AgentManagerPanel",
       "Agent Manager",
       vscode.ViewColumn.One,
       {
@@ -112,9 +112,9 @@ export class VscodeHost implements Host {
       disableViewedRegistration: true,
       disableStatsPolling: true,
       focusTargetContext: {
-        prompt: "kilo-code.new.agentManagerPromptFocused",
-        mainTerminal: "kilo-code.new.agentManagerMainTerminalFocused",
-        sideTerminal: "kilo-code.new.agentManagerSideTerminalFocused",
+        prompt: "babel-code.new.agentManagerPromptFocused",
+        mainTerminal: "babel-code.new.agentManagerMainTerminalFocused",
+        sideTerminal: "babel-code.new.agentManagerSideTerminalFocused",
       },
       routeService: this.routes,
       projectQualifier: () => {
@@ -237,7 +237,7 @@ export class VscodeHost implements Host {
   }
 
   multiProject(): boolean {
-    return vscode.workspace.getConfiguration("kilo-code.new.experimental").get("multiProject", false)
+    return vscode.workspace.getConfiguration("babel-code.new.experimental").get("multiProject", false)
   }
 
   readProjects(): unknown {
@@ -258,7 +258,7 @@ export class VscodeHost implements Host {
 
   onDidChangeMultiProject(cb: (enabled: boolean) => void): Disposable {
     return vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("kilo-code.new.experimental.multiProject")) cb(this.multiProject())
+      if (e.affectsConfiguration("babel-code.new.experimental.multiProject")) cb(this.multiProject())
     })
   }
 
@@ -267,7 +267,7 @@ export class VscodeHost implements Host {
   }
 
   autoBranchNaming(): { enabled: boolean; prefix: string } {
-    const cfg = vscode.workspace.getConfiguration("kilo-code.new.agentManager")
+    const cfg = vscode.workspace.getConfiguration("babel-code.new.agentManager")
     return {
       enabled: cfg.get("autoBranchNaming", true),
       prefix: cfg.get("branchPrefix", ""),
@@ -305,7 +305,7 @@ export class VscodeHost implements Host {
   }
 
   extensionKeybindings(): Array<{ command: string; key?: string; mac?: string; when?: string }> {
-    const ext = vscode.extensions.getExtension("kilocode.kilo-code")
+    const ext = vscode.extensions.getExtension("babelcode.babel-code")
     return ext?.packageJSON?.contributes?.keybindings ?? []
   }
 
@@ -322,7 +322,7 @@ export class VscodeHost implements Host {
   }
 
   openSettings(tab?: string, projectId?: string): void {
-    void vscode.commands.executeCommand("kilo-code.new.settingsButtonClicked", tab, projectId)
+    void vscode.commands.executeCommand("babel-code.new.settingsButtonClicked", tab, projectId)
   }
 
   refreshGit(): void {

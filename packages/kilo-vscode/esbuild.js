@@ -262,7 +262,10 @@ function getExtensionConfig() {
     sourcesContent: false,
     platform: "node",
     outfile: "dist/extension.js",
-    external: ["vscode"],
+    // playwright-core is kept external: it locates system browsers relative to
+    // its own package directory and relies on its lib layout at runtime, which
+    // breaks when bundled into the single-file dist/extension.js.
+    external: ["vscode", "playwright-core"],
     logLevel: "silent",
     plugins: watch ? [esbuildProblemMatcherPlugin] : [],
   }

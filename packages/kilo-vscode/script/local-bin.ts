@@ -187,6 +187,26 @@ function platformTag(): string {
   return `cli-${os}-${process.arch}`
 }
 
+async function isCompiledBinary(filePath: string): Promise<boolean> {
+  try {
+    const file = Bun.file(filePath)
+    if (!(await file.exists())) return false
+    const header = await file.slice(0, 4).arrayBuffer()
+    const bytes = new Uint8Array(header)
+    if (bytes[0] === 0x7f && bytes[1] === 0x45 && bytes[2] === 0x4c && bytes[3] === 0x46) return true
+    if (bytes[0] === 0x4d && bytes[1] === 0x5a) return true
+    if (
+      (bytes[0] === 0xcf && bytes[1] === 0xfa && bytes[2] === 0xed && bytes[3] === 0xfe) ||
+      (bytes[0] === 0xfe && bytes[1] === 0xed && bytes[2] === 0xfa && bytes[3] === 0xcf) ||
+      (bytes[0] === 0xca && bytes[1] === 0xfe && bytes[2] === 0xba && bytes[3] === 0xbe)
+    )
+      return true
+    return false
+  } catch {
+    return false
+  }
+}
+
 async function findKiloBinaryInOpencodeDist(): Promise<string | null> {
   const distDir = join(opencodeDir, "dist")
 
@@ -201,13 +221,12 @@ async function findKiloBinaryInOpencodeDist(): Promise<string | null> {
   const preferred = join(distDir, `@kilocode`, tag, "bin", binName)
   try {
     statSync(preferred)
-    if (!hasTreeSitterResources(preferred) || !hasKiloSandboxWorker(preferred)) return null
-    return preferred
+    if ((await isCompiledBinary(preferred)) && hasTreeSitterResources(preferred) && hasKiloSandboxWorker(preferred)) {
+      return preferred
+    }
   } catch {
     // fall through to generic search
   }
-
-  if (compiledOnly) return null
 
   // Fallback: find any dist/**/bin/kilo or kilo.exe
   const queue = [distDir]
@@ -229,7 +248,7 @@ async function findKiloBinaryInOpencodeDist(): Promise<string | null> {
         continue
       }
       if (e.isFile() && (e.name === "kilo" || e.name === "kilo.exe") && basename(dirname(p)) === "bin") {
-        if (!hasTreeSitterResources(p) || !hasKiloSandboxWorker(p)) continue
+        if (!(await isCompiledBinary(p)) || !hasTreeSitterResources(p) || !hasKiloSandboxWorker(p)) continue
         return p
       }
     }
@@ -254,12 +273,16 @@ async function ensureBuiltBinary(): Promise<string> {
 
   const pkg = await Bun.file(join(repoDir, "package.json")).json()
   const bun = String(pkg.packageManager)
+  const env = {
+    ...process.env,
+    ...(Bun.which("zig") || process.env.ZIG ? {} : { KILO_SKIP_BUNDLED_BWRAP: "1" }),
+  }
   log("Building CLI binary...")
   try {
-    await $`bunx ${bun} run build --single --skip-install`.cwd(opencodeDir)
+    await $`bunx ${bun} run build --single --skip-install`.cwd(opencodeDir).env(env)
   } catch (err) {
     log(`Pinned bunx build failed (${err}), running via active bun runtime...`)
-    await $`bun run script/build.ts --single --skip-install`.cwd(opencodeDir)
+    await $`bun run script/build.ts --single --skip-install`.cwd(opencodeDir).env(env)
   }
 
   const built = await findKiloBinaryInOpencodeDist()
@@ -322,7 +345,11 @@ async function main() {
   }
   const targetFile = Bun.file(targetBinPath)
   const exists = await targetFile.exists()
-  const ready = exists && hasTreeSitterResources(targetBinPath) && hasKiloSandboxWorker(targetBinPath)
+  const ready =
+    exists &&
+    (await isCompiledBinary(targetBinPath)) &&
+    hasTreeSitterResources(targetBinPath) &&
+    hasKiloSandboxWorker(targetBinPath)
 
   const stale = ready && !forceRebuild && (await isStale())
   const rebuild = forceRebuild || stale || !ready

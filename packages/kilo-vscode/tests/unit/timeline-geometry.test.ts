@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { geometry, hit, navigate } from "../../webview-ui/src/utils/timeline/geometry"
+import { geometry, hit, navigate, spanIndex } from "../../webview-ui/src/utils/timeline/geometry"
 
 describe("timeline geometry", () => {
   const bars = [
@@ -42,5 +42,32 @@ describe("timeline geometry", () => {
     expect(navigate(1, 3, "End")).toBe(2)
     expect(navigate(1, 3, "Escape")).toBe(1)
     expect(navigate(0, 0, "ArrowRight")).toBe(-1)
+  })
+
+  describe("spanIndex", () => {
+    const ordered = [{ msgId: "a" }, { msgId: "c" }, { msgId: "d" }]
+    const order = new Map([
+      ["a", 0],
+      ["b", 1],
+      ["c", 2],
+      ["d", 3],
+    ])
+
+    it("resolves exact message bars for both viewport edges", () => {
+      expect(spanIndex(ordered, order, "a", true)).toBe(0)
+      expect(spanIndex(ordered, order, "d", false)).toBe(2)
+    })
+
+    it("snaps a message without bars to the nearest bar", () => {
+      // "b" has no bar: the start edge uses the first bar at/after it, the
+      // end edge the last bar at/before it.
+      expect(spanIndex(ordered, order, "b", true)).toBe(1)
+      expect(spanIndex(ordered, order, "b", false)).toBe(0)
+    })
+
+    it("returns -1 for unknown messages", () => {
+      expect(spanIndex(ordered, order, "zz", true)).toBe(-1)
+      expect(spanIndex(ordered, order, "zz", false)).toBe(-1)
+    })
   })
 })

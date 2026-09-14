@@ -4,7 +4,7 @@ import type { ExtensionMessage, ModelSelection } from "../../webview-ui/src/type
 
 const model: ModelSelection = { providerID: "anthropic", modelID: "claude-sonnet-4" }
 
-function setup(session?: string) {
+function setup(session?: string, configVariants: Record<string, string> = {}) {
   const selections: Record<string, string> = {}
   const messages: Array<{ type: string; key?: string; value?: string }> = []
   const order: string[] = []
@@ -18,6 +18,7 @@ function setup(session?: string) {
     session: () => session,
     agent: () => "code",
     find: () => ({ variants: { low: {}, high: {} } }),
+    configVariant: (agent) => configVariants[agent],
     post: (message) => {
       order.push("post")
       messages.push(message)
@@ -85,5 +86,18 @@ describe("session variants", () => {
     session.variants.carry(model, undefined, "code", "session-a")
     expect(session.selections).toEqual({ "agent/code/anthropic/claude-sonnet-4": "high" })
     expect(session.variants.current()).toBe("high")
+  })
+
+  it("falls back to the per-mode config default when nothing is stored", () => {
+    const state = setup(undefined, { code: "high" })
+    expect(state.variants.current()).toBe("high")
+    // An explicit chat pick still wins over the config default.
+    state.variants.select("low")
+    expect(state.variants.current()).toBe("low")
+  })
+
+  it("drops a config default the selected model does not support", () => {
+    const state = setup(undefined, { code: "ultra" })
+    expect(state.variants.current()).toBeUndefined()
   })
 })

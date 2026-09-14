@@ -11,11 +11,15 @@ export class BrowserAutomationService implements vscode.Disposable {
   // MCP server name used when registering with the CLI backend
   private static readonly MCP_SERVER_NAME = "kilo-playwright"
 
-  constructor(private readonly connectionService: KiloConnectionService) {
+  constructor(
+    private readonly connectionService: KiloConnectionService,
+    /** Returns the CDP endpoint of the shared Browser Preview browser, if open. */
+    private readonly cdpEndpoint: () => string | null = () => null,
+  ) {
     // Listen for settings changes
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration("kilo-code.new.browserAutomation")) {
+        if (e.affectsConfiguration("babel-code.new.browserAutomation")) {
           this.syncWithSettings()
         }
       }),
@@ -27,7 +31,7 @@ export class BrowserAutomationService implements vscode.Disposable {
    * Called on construction and when settings change.
    */
   async syncWithSettings(): Promise<void> {
-    const config = vscode.workspace.getConfiguration("kilo-code.new.browserAutomation")
+    const config = vscode.workspace.getConfiguration("babel-code.new.browserAutomation")
     const enabled = config.get<boolean>("enabled", false)
 
     if (enabled) {
@@ -42,7 +46,7 @@ export class BrowserAutomationService implements vscode.Disposable {
    * Should be called from the connection state change handler.
    */
   async reregisterIfEnabled(): Promise<void> {
-    const config = vscode.workspace.getConfiguration("kilo-code.new.browserAutomation")
+    const config = vscode.workspace.getConfiguration("babel-code.new.browserAutomation")
     const enabled = config.get<boolean>("enabled", false)
     if (enabled) {
       await this.register()
@@ -62,17 +66,25 @@ export class BrowserAutomationService implements vscode.Disposable {
       return
     }
 
-    const config = vscode.workspace.getConfiguration("kilo-code.new.browserAutomation")
+    const config = vscode.workspace.getConfiguration("babel-code.new.browserAutomation")
     const useSystemChrome = config.get<boolean>("useSystemChrome", true)
     const headless = config.get<boolean>("headless", false)
 
-    // Build the command for the Playwright MCP server
+    // Build the command for the Playwright MCP server. When the Browser
+    // Preview browser is running we attach to it over CDP so browser tools
+    // and the user share the SAME browser (and the picker script inside it).
+    // Otherwise MCP launches its own browser as before.
     const command = ["npx", "@playwright/mcp@latest"]
-    if (headless) {
-      command.push("--headless")
-    }
-    if (useSystemChrome) {
-      command.push("--browser", "chrome")
+    const endpoint = this.cdpEndpoint()
+    if (endpoint) {
+      command.push("--cdp-endpoint", endpoint)
+    } else {
+      if (headless) {
+        command.push("--headless")
+      }
+      if (useSystemChrome) {
+        command.push("--browser", "chrome")
+      }
     }
 
     try {

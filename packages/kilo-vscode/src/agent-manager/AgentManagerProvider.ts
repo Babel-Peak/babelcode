@@ -82,7 +82,7 @@ import type { AgentManagerOutMessage, AgentManagerInMessage } from "./types"
 import type { Host, PanelContext, OutputHandle, Disposable } from "./host"
 import { focusPanelPrompt, revealPanel } from "./focus-panel"
 export class AgentManagerProvider implements Disposable {
-  public static readonly viewType = "kilo-code.new.AgentManagerPanel"
+  public static readonly viewType = "babel-code.new.AgentManagerPanel"
   private panel: PanelContext | undefined
   private outputChannel: OutputHandle
   private readonly registry: ProjectRegistry
@@ -132,7 +132,7 @@ export class AgentManagerProvider implements Disposable {
     private readonly connectionService: KiloConnectionService,
     binary: GitExecutable | string = "git",
   ) {
-    this.outputChannel = host.createOutput("Kilo Agent Manager")
+    this.outputChannel = host.createOutput("Babel Code Agent Manager")
     this.terminalManager = new SessionTerminalManager(
       (msg) => this.outputChannel.appendLine(`[SessionTerminal] ${msg}`),
       createTerminalHost(),

@@ -14,15 +14,7 @@ import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import type { AgentInfo } from "../../types/messages"
 import { isEnterKeyCommitNotIme } from "../../utils/ime-enter"
-
-/** Format an agent for display. Uses displayName if available, otherwise title-cases the slug. */
-function formatAgentLabel(agent: AgentInfo): string {
-  if (agent.displayName) return agent.displayName
-  return agent.name
-    .split(/[-_]/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ")
-}
+import { formatAgentLabel } from "../../utils/agent-label"
 
 // ---------------------------------------------------------------------------
 // Reusable base component
@@ -211,6 +203,9 @@ export const ModeSwitcher: Component<ModeSwitcherProps> = (props) => {
       value={session.selectedAgent(id())}
       onSelect={(name) => {
         session.selectAgent(name, id())
+        // Session variant picks are mode-agnostic; drop them so the new
+        // mode's configured default reasoning applies (like model overrides).
+        session.resetVariant(id())
         requestAnimationFrame(() => window.dispatchEvent(new Event("focusPrompt")))
       }}
     />

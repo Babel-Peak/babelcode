@@ -40,7 +40,7 @@ function stubConfig(state: State) {
     return fresh
   }
   ;(vscode.workspace as unknown as Stub).getConfiguration = (section?: string) => {
-    if (section !== "kilo-code.new.autocomplete") {
+    if (section !== "babel-code.new.autocomplete") {
       return {
         get: () => undefined,
         inspect: () => undefined,

@@ -9,12 +9,13 @@ import { Portal } from "solid-js/web"
 import type { AssistantMessage as SDKAssistantMessage, Part as SDKPart } from "@kilocode/sdk/v2"
 import { useSession } from "../../context/session"
 import { visibleParts } from "../../context/session-queue"
-import { color, label } from "../../utils/timeline/colors"
-import { geometry, hit, navigate } from "../../utils/timeline/geometry"
+import { color, label, palette } from "../../utils/timeline/colors"
+import { geometry, hit, navigate, spanIndex } from "../../utils/timeline/geometry"
 import { dispatchTimelineHighlight, same, type TimelineHighlight } from "../../utils/timeline/highlight"
-import { sizes, pinned, MAX_HEIGHT } from "../../utils/timeline/sizes"
+import { onTimelineViewport, type TimelineViewport } from "../../utils/timeline/viewport"
+import { sizes, pinned, INDICATOR_GAP, INDICATOR_H, MAX_HEIGHT, TIMELINE_HEIGHT } from "../../utils/timeline/sizes"
 import { isRenderable } from "../../utils/transcript-parts"
-import type { Part, Message } from "../../types/messages"
+import type { Part, Message, TextPart } from "../../types/messages"
 
 export interface TimelineBar {
   bg: string
@@ -26,23 +27,34 @@ export interface TimelineBar {
   partId: string
 }
 
-function collect(messages: Message[], parts: Record<string, Part[]>): TimelineBar[] {
-  const result: { msg: Message; part: Part }[] = []
+/** User queries render as their own bar, highlighted in the user color. */
+function userParts(msg: Message, getParts: (id: string) => Part[]): Part[] {
+  const text = getParts(msg.id).find((part): part is TextPart => part.type === "text" && !part.synthetic)
+  if (!text) return []
+  return [{ ...text, id: `${msg.id}:query`, messageID: msg.id }]
+}
+
+function collect(messages: Message[], parts: Record<string, Part[]>, getParts: (id: string) => Part[]): TimelineBar[] {
+  const result: { msg: Message; part: Part; user: boolean }[] = []
 
   for (const msg of messages) {
-    if (msg.role === "user") continue
+    if (msg.role === "user") {
+      const ps = userParts(msg, getParts)
+      for (const p of ps) result.push({ msg, part: p, user: true })
+      continue
+    }
     const ps = parts[msg.id]
     if (!ps) continue
     for (const p of ps) {
       if (p.type === "step-start") continue
-      result.push({ msg, part: p })
+      result.push({ msg, part: p, user: false })
     }
   }
 
   const sz = sizes(result.map((item) => item.part))
   return result.map((item, i) => ({
-    bg: color(item.part),
-    tip: label(item.part, item.msg),
+    bg: item.user ? palette.user : color(item.part),
+    tip: item.user ? "User query" : label(item.part, item.msg),
     width: sz[i]!.width,
     height: sz[i]!.height,
     idx: i,
@@ -82,9 +94,28 @@ export const TaskTimeline: Component = () => {
     return result
   }
 
-  const bars = createMemo(() => collect(messages(), allParts()))
+  const bars = createMemo(() => collect(messages(), allParts(), session.getParts))
   const layout = createMemo(() => geometry(bars(), MAX_HEIGHT))
   const busy = () => session.status() === "busy"
+
+  // Chat viewport span, dispatched by MessageList on scroll, drawn as a line
+  // under the bars so scrolling visibly tracks "where am I" in the actions.
+  const [viewport, setViewport] = createSignal<TimelineViewport>()
+  onCleanup(onTimelineViewport(setViewport))
+  const span = createMemo(() => {
+    const view = viewport()
+    const list = bars()
+    const items = layout().items
+    if (!view || list.length === 0 || items.length === 0) return undefined
+    const order = new Map<string, number>()
+    messages().forEach((msg, i) => order.set(msg.id, i))
+    const start = spanIndex(list, order, view.first, true)
+    const end = spanIndex(list, order, view.last, false)
+    if (start < 0 || end < 0) return undefined
+    const from = items[Math.min(start, end)]!
+    const to = items[Math.max(start, end)]!
+    return { x: from.x, width: to.x + to.width - from.x }
+  })
   const selected = () => {
     const idx = active()
     if (idx >= 0 && idx < bars().length) return idx
@@ -283,7 +314,7 @@ export const TaskTimeline: Component = () => {
           aria-valuemax={bars().length}
           aria-valuenow={value()}
           aria-valuetext={aria()}
-          style={{ height: `${MAX_HEIGHT}px` }}
+          style={{ height: `${TIMELINE_HEIGHT}px` }}
           onKeyDown={onKeyDown}
           onBlur={hideTip}
           onPointerDown={onPointerDown}
@@ -305,6 +336,20 @@ export const TaskTimeline: Component = () => {
             </svg>
             <Show when={hover() >= 0}>{overlay(hover())}</Show>
             <Show when={busy() && bars().length > 0}>{overlay(bars().length - 1, true)}</Show>
+            <Show when={span()}>
+              {(s) => (
+                <div
+                  class="task-timeline-viewport"
+                  aria-hidden="true"
+                  style={{
+                    left: `${s().x}px`,
+                    width: `${s().width}px`,
+                    top: `${MAX_HEIGHT + INDICATOR_GAP}px`,
+                    height: `${INDICATOR_H}px`,
+                  }}
+                />
+              )}
+            </Show>
           </div>
         </div>
       </div>

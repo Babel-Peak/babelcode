@@ -85,10 +85,21 @@ const ModelsTab: Component = () => {
 
   const allAgents = createMemo(() => session.agents())
 
+  // Effective model for an agent mode: its own override, else the global
+  // default — mirroring the chat's model resolution so the variant dropdown
+  // lists exactly the reasoning efforts the chat will use.
+  const modeModel = (agentName: string) =>
+    parseModelString(config().agent?.[agentName]?.model ?? config().model ?? undefined)
+  const modeVariants = (agentName: string) => Object.keys(provider.findModel(modeModel(agentName))?.variants ?? {})
+
+  function updateModeVariant(agentName: string, value: string | null) {
+    updateConfig({ agent: { [agentName]: { variant: value } } })
+  }
+
   function handleModeModelSelect(agentName: string) {
     return (providerID: string, modelID: string) => {
       if (!providerID || !modelID) {
-        updateConfig({ agent: { [agentName]: { model: null } } })
+        updateConfig({ agent: { [agentName]: { model: null, variant: null } } })
         return
       }
       const current = config().agent?.[agentName]?.variant ?? undefined
@@ -253,15 +264,30 @@ const ModelsTab: Component = () => {
               title={agent.name.charAt(0).toUpperCase() + agent.name.slice(1)}
               last={index() === allAgents().length - 1}
             >
-              <ModelSelectorBase
-                value={parseModelString(config().agent?.[agent.name]?.model ?? undefined)}
-                onSelect={handleModeModelSelect(agent.name)}
-                placement="bottom-start"
-                allowClear
-                clearLabel={language.t("settings.providers.notSet")}
-                label={`${language.t("settings.providers.modeModels")}: ${agent.name}`}
-                description={language.t("settings.providers.modeModels.description")}
-              />
+              <div style={{ display: "flex", "flex-direction": "column", "align-items": "flex-end", gap: "8px" }}>
+                <ModelSelectorBase
+                  value={parseModelString(config().agent?.[agent.name]?.model ?? undefined)}
+                  onSelect={handleModeModelSelect(agent.name)}
+                  placement="bottom-start"
+                  allowClear
+                  clearLabel={language.t("settings.providers.notSet")}
+                  label={`${language.t("settings.providers.modeModels")}: ${agent.name}`}
+                  description={language.t("settings.providers.modeModels.description")}
+                />
+                <Show when={modeVariants(agent.name).length > 0}>
+                  <ThinkingSelectorBase
+                    variants={modeVariants(agent.name)}
+                    value={config().agent?.[agent.name]?.variant ?? undefined}
+                    onSelect={(value) => updateModeVariant(agent.name, value)}
+                    onClear={() => updateModeVariant(agent.name, null)}
+                    allowClear
+                    clearLabel={language.t("settings.providers.notSet")}
+                    placement="bottom-start"
+                    globalTrigger={false}
+                    label={language.t("settings.providers.modeModels.variant")}
+                  />
+                </Show>
+              </div>
             </SettingsRow>
           )}
         </For>

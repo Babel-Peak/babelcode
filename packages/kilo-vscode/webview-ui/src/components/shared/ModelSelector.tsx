@@ -217,14 +217,16 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     window.addEventListener("mouseup", onUp)
   }
 
-  // Only show models from Kilo Gateway or connected providers.
+  // Only show models from connected providers. Kilo Gateway models are
+  // excluded entirely from this picker.
   // kilo-auto/small is excluded unless includeAutoSmall is explicitly true.
   const visibleModels = createMemo(() => {
     if (props.models) return props.models
     const c = connected()
     return models().filter((m) => {
+      if (m.providerID === KILO_GATEWAY_ID) return false
       if (!props.includeAutoSmall && isSmall(m)) return false
-      return m.providerID === KILO_GATEWAY_ID || c.includes(m.providerID)
+      return c.includes(m.providerID)
     })
   })
 

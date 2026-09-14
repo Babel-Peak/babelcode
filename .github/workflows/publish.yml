@@ -2,12 +2,15 @@ name: publish
 run-name: "${{ format('{0} {1}', inputs.pre_release && 'pre-release' || 'release', inputs.bump) }}"
 
 on:
-  # push:
-  #   branches:
-  #     - ci
-  #     - dev
-  #     - beta
-  #     - snapshot-*
+  # kilocode_change start
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/kilo-vscode/**"
+      - ".changeset/**"
+      - "!packages/kilo-vscode/*.vsix"
+  # kilocode_change end
   workflow_dispatch:
     inputs:
       bump:
@@ -42,7 +45,7 @@ permissions:
 jobs:
   version:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Kilo-Org/kilocode' && !startsWith(github.event.head_commit.message, 'release:') # kilocode_change
     steps:
       - uses: actions/checkout@v6 # kilocode_change
         with:
@@ -55,7 +58,7 @@ jobs:
         run: bun install
 
       - name: Install Kilo
-        if: inputs.bump || inputs.version
+        if: inputs.bump || inputs.version || github.event_name == 'push'
         run: bun i -g @kilocode/cli
       # kilocode_change end
 
@@ -65,7 +68,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          KILO_BUMP: ${{ inputs.bump }}
+          # kilocode_change start
+          # Automatic main-branch deployments use a patch release when no
+          # manual bump was supplied. This keeps the extension version
+          # monotonic so registries can offer updates to existing installs.
+          KILO_BUMP: ${{ inputs.bump || (github.event_name == 'push' && 'patch') || '' }}
+          # kilocode_change end
           KILO_VERSION: ${{ inputs.version }}
           KILO_PRE_RELEASE: ${{ inputs.pre_release }}
           KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
@@ -482,5 +490,3 @@ jobs:
           AUR_KEY: ${{ secrets.AUR_KEY }}
           GITHUB_TOKEN: ${{ steps.committer.outputs.token }}
           NPM_CONFIG_PROVENANCE: true
-          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
-          OPENVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}

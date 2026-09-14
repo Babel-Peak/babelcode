@@ -64,6 +64,12 @@ import { normalize } from "./session-diff"
 import { deferredHighlight } from "../context/marked"
 import { escapeHtml } from "../util/escape-html"
 import { buildHighlightedTextSegments, type HighlightSegment } from "./message-highlight"
+import {
+  parseCodeContexts,
+  parseMessageSegments,
+  type ExtractedCodeContext,
+  type ExtractedBrowserElement,
+} from "./code-context"
 
 // Windows CLI tools (e.g. winget) use \r to overwrite progress bars in-place.
 // Without this, every progress frame renders as a separate visual line.
@@ -755,6 +761,7 @@ export function UserMessageDisplay(props: {
   onDelete?: () => void
   onFork?: () => void
   onRevert?: () => void
+  onSendNow?: () => void
 }) {
   const data = useData()
   const dialog = useDialog()
@@ -767,6 +774,7 @@ export function UserMessageDisplay(props: {
   )
 
   const text = createMemo(() => props.text ?? textPart()?.text ?? "")
+  const segments = createMemo(() => parseMessageSegments(text()))
 
   const files = createMemo(() => (props.parts?.filter((p) => p.type === "file") as FilePart[]) ?? [])
 
@@ -827,6 +835,25 @@ export function UserMessageDisplay(props: {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const SendNow = () => (
+    <Show when={props.onSendNow}>
+      <Tooltip value={i18n.t("ui.message.sendNow")} placement="right" gutter={4}>
+        <IconButton
+          data-slot="user-message-send-now"
+          icon="arrow-up"
+          size="normal"
+          variant="ghost"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(event) => {
+            event.stopPropagation()
+            props.onSendNow?.()
+          }}
+          aria-label={i18n.t("ui.message.sendNow")}
+        />
+      </Tooltip>
+    </Show>
+  )
+
   const Delete = () => (
     <Show when={props.onDelete}>
       <Tooltip value={i18n.t("ui.message.deleteQueued")} placement="right" gutter={4}>
@@ -885,6 +912,7 @@ export function UserMessageDisplay(props: {
         <Show when={!text() && !props.header && props.queued}>
           <div data-slot="user-message-queued-indicator">
             <TextShimmer text={i18n.t("ui.message.queued")} />
+            <SendNow />
             <Delete />
           </div>
         </Show>
@@ -892,14 +920,85 @@ export function UserMessageDisplay(props: {
           <>
             <div data-slot="user-message-body">
               {props.header}
-              <Show when={text()}>
+              <Show when={segments().length > 0}>
                 <div data-slot="user-message-text" dir="auto" data-queued={props.queued ? "" : undefined}>
-                  <HighlightedText text={text()} references={inlineFiles()} agents={agents()} />
+                  <For each={segments()}>
+                    {(seg) => (
+                      <Switch>
+                        <Match when={seg.type === "text"}>
+                          <HighlightedText
+                            text={(seg as { text: string }).text}
+                            references={inlineFiles()}
+                            agents={agents()}
+                          />
+                        </Match>
+                        <Match when={seg.type === "code-context"}>
+                          {(() => {
+                            const ctx = seg as ExtractedCodeContext
+                            const file = getFilename(ctx.path)
+                            const label = () => {
+                              if (ctx.startLine !== undefined && ctx.endLine !== undefined) {
+                                return ctx.startLine === ctx.endLine
+                                  ? `${file}:L${ctx.startLine}`
+                                  : `${file}:L${ctx.startLine}-L${ctx.endLine}`
+                              }
+                              if (ctx.startLine !== undefined) {
+                                return `${file}:L${ctx.startLine}`
+                              }
+                              return file
+                            }
+                            return (
+                              <span
+                                data-slot="user-message-inline-citation"
+                                data-type="code-context"
+                                onClick={() => {
+                                  if (data.openFile) {
+                                    data.openFile(ctx.path, ctx.startLine, undefined, props.message.sessionID)
+                                  }
+                                }}
+                                title={ctx.path}
+                              >
+                                <FileIcon node={{ path: ctx.path, type: "file" }} class="shrink-0" />
+                                <span data-slot="user-message-code-context-text">{label()}</span>
+                              </span>
+                            )
+                          })()}
+                        </Match>
+                        <Match when={seg.type === "browser-element"}>
+                          {(() => {
+                            const el = seg as ExtractedBrowserElement
+                            return (
+                              <span
+                                data-slot="user-message-inline-citation"
+                                data-type="browser-element"
+                                title={el.selector || el.url || "Browser Element"}
+                              >
+                                <svg
+                                  class="shrink-0"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 16 16"
+                                  fill="none"
+                                  aria-hidden="true"
+                                >
+                                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2" />
+                                  <ellipse cx="8" cy="8" rx="3" ry="6.5" stroke="currentColor" stroke-width="1.2" />
+                                  <line x1="1.5" y1="8" x2="14.5" y2="8" stroke="currentColor" stroke-width="1.2" />
+                                </svg>
+                                <span data-slot="user-message-code-context-text">{el.label}</span>
+                              </span>
+                            )
+                          })()}
+                        </Match>
+                      </Switch>
+                    )}
+                  </For>
                 </div>
               </Show>
               <GrowBox animate={!!props.animate} open={!!props.queued}>
                 <div data-slot="user-message-queued-indicator">
                   <TextShimmer text={i18n.t("ui.message.queued")} />
+                  <SendNow />
                   <Delete />
                 </div>
               </GrowBox>

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "bun:test"
 import {
   beginPendingSend,
   clearSessionDraftDiscarded,
+  codeContextDrafts,
   deleteDraftsForSession,
   discardPendingDraft,
   drafts,
@@ -16,7 +17,7 @@ import {
   finishPendingSend,
 } from "../../webview-ui/src/utils/draft-store"
 
-const stores = [drafts, reviewDrafts, imageDrafts, scrollDrafts]
+const stores = [drafts, reviewDrafts, imageDrafts, codeContextDrafts, scrollDrafts]
 
 beforeEach(() => stores.forEach((store) => store.clear()))
 
@@ -28,11 +29,13 @@ describe("prompt draft storage", () => {
       [{ id: "review", file: "a.ts", side: "additions", line: 1, comment: "comment", selectedText: "line" }],
       [{ id: "image", filename: "a.png", mime: "image/png", dataUrl: "data:image/png;base64,a" }],
       42,
+      [{ id: "ctx-1", path: "a.ts", startLine: 1, endLine: 5, text: "code" }],
     )
 
     expect(drafts.size).toBe(1)
     expect(reviewDrafts.size).toBe(1)
     expect(imageDrafts.size).toBe(1)
+    expect(codeContextDrafts.size).toBe(1)
     expect(scrollDrafts.size).toBe(1)
 
     discardPendingDraft("sidebar-pending:1")

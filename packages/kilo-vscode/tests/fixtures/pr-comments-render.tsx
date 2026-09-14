@@ -58,7 +58,7 @@ const [comments, setComments] = createSignal({
     {
       id: "PRRC_open",
       threadId: "PRRT_open",
-      author: "kilo-code-bot",
+      author: "babel-code-bot",
       body: "comment body survives Pierre rendering",
       file: "packages/kilo-ui/src/components/file.tsx",
       line: 14,

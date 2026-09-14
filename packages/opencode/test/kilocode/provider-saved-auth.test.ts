@@ -22,6 +22,54 @@ const auth = <A, E, R>(value: Record<string, unknown>, effect: Effect.Effect<A, 
       }),
   )
 
+const env = <A, E, R>(value: string | undefined, effect: Effect.Effect<A, E, R>) =>
+  Effect.acquireUseRelease(
+    Effect.sync(() => {
+      const previous = process.env.OPENROUTER_API_KEY
+      if (value === undefined) delete process.env.OPENROUTER_API_KEY
+      else process.env.OPENROUTER_API_KEY = value
+      return previous
+    }),
+    () => effect,
+    (previous) =>
+      Effect.sync(() => {
+        if (previous === undefined) delete process.env.OPENROUTER_API_KEY
+        else process.env.OPENROUTER_API_KEY = previous
+      }),
+  )
+
+it.instance(
+  "prefers saved OpenRouter auth over environment auth",
+  () =>
+    env(
+      "container-key",
+      auth(
+        { openrouter: { type: "api", key: "settings-key" } },
+        Effect.gen(function* () {
+          const provider = yield* Provider.Service
+          expect((yield* provider.list())[ProviderV2.ID.openrouter].key).toBe("settings-key")
+        }),
+      ),
+    ),
+  { config: {} },
+)
+
+it.instance(
+  "uses OpenRouter environment auth when explicitly enabled",
+  () =>
+    env(
+      "container-key",
+      auth(
+        { openrouter: { type: "api", key: "settings-key" } },
+        Effect.gen(function* () {
+          const provider = yield* Provider.Service
+          expect((yield* provider.list())[ProviderV2.ID.openrouter].key).toBe("container-key")
+        }),
+      ),
+    ),
+  { config: { provider: { openrouter: { options: { useEnv: true } } } } },
+)
+
 it.instance(
   "uses saved Azure resource metadata",
   () =>

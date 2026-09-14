@@ -434,6 +434,15 @@
   width: 100%;
 }
 
+[data-component="assistant-mode"] {
+  /* Agent mode ("Code", "Ask", ...) shown above the assistant response.
+   * Muted metadata that never competes with the message content. */
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--font-family-sans);
+  font-size: var(--kilo-font-size-11);
+  line-height: var(--line-height-normal);
+}
+
 [data-component="assistant-throughput"] {
   /* Plain-text generation-speed value shown beside the copy/feedback buttons
    * on an assistant message. Renders as muted metadata — no icon, no

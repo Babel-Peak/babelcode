@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test"
 import {
   activeUserMessageID,
+  extractQueuedPayload,
   messageTurns,
   partitionTurns,
   queuedUserMessageIDs,
@@ -632,5 +633,47 @@ describe("activeUserMessageID", () => {
     ]
 
     expect(activeUserMessageID(messages, { type: "busy" })).toBe("message_3")
+  })
+})
+
+describe("extractQueuedPayload", () => {
+  it("extracts text prompt without files", () => {
+    const parts: Part[] = [{ id: "p1", messageID: "m1", type: "text", text: "Hello world" }]
+    const payload = extractQueuedPayload(parts)
+    expect(payload).toEqual({
+      text: "Hello world",
+      review: undefined,
+      files: undefined,
+      isCommand: false,
+      commandName: undefined,
+      commandArgs: "",
+    })
+  })
+
+  it("extracts slash command and args", () => {
+    const parts: Part[] = [{ id: "p1", messageID: "m1", type: "text", text: "/review worktree --branch" }]
+    const payload = extractQueuedPayload(parts)
+    expect(payload.isCommand).toBe(true)
+    expect(payload.commandName).toBe("review")
+    expect(payload.commandArgs).toBe("worktree --branch")
+  })
+
+  it("extracts file attachments", () => {
+    const parts: Part[] = [
+      { id: "p1", messageID: "m1", type: "text", text: "Look at this" },
+      {
+        id: "p2",
+        messageID: "m1",
+        type: "file",
+        mime: "image/png",
+        url: "data:image/png;base64,123",
+        filename: "test.png",
+      },
+    ]
+    const payload = extractQueuedPayload(parts)
+    expect(payload.text).toBe("Look at this")
+    expect(payload.files).toEqual([
+      { mime: "image/png", url: "data:image/png;base64,123", filename: "test.png", source: undefined },
+    ])
   })
 })

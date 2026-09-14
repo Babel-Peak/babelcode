@@ -344,6 +344,29 @@ export interface AppendChatBoxMessage {
   text: string
 }
 
+export interface AddCodeContextMessage {
+  type: "addCodeContext"
+  filePath: string
+  startLine: number
+  endLine: number
+  selectedText: string
+}
+
+/** Picked browser element shown as a badge; serialized as text when sent. */
+export interface AddBrowserElementMessage {
+  type: "addBrowserElement"
+  label: string
+  text: string
+}
+
+/** Captured browser screenshot attached as a prompt image. */
+export interface AddImageMessage {
+  type: "addImage"
+  filename: string
+  mime: string
+  dataUrl: string
+}
+
 export interface AppendReviewCommentsMessage {
   type: "appendReviewComments"
   comments: ReviewCommentEntry[]
@@ -1527,6 +1550,9 @@ export type ExtensionMessage =
   | AgentManagerSendInitialMessage
   | SetChatBoxMessage
   | AppendChatBoxMessage
+  | AddCodeContextMessage
+  | AddBrowserElementMessage
+  | AddImageMessage
   | AppendReviewCommentsMessage
   | AppendReviewCommentsToTerminalMessage
   | TriggerTaskMessage

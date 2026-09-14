@@ -12,6 +12,7 @@ interface VscodeUserMessageProps {
   onDelete?: () => void
   onFork?: () => void
   onRevert?: () => void
+  onSendNow?: () => void
 }
 
 export const VscodeUserMessage: Component<VscodeUserMessageProps> = (props) => {
@@ -39,6 +40,7 @@ export const VscodeUserMessage: Component<VscodeUserMessageProps> = (props) => {
       onDelete={props.onDelete}
       onFork={props.onFork}
       onRevert={props.onRevert}
+      onSendNow={props.onSendNow}
     />
   )
 }

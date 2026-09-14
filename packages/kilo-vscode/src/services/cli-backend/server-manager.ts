@@ -92,7 +92,7 @@ export class ServerManager {
 
     return new Promise((resolve, reject) => {
       console.log("[Kilo New] ServerManager: 🎬 Spawning CLI process:", cliPath, ["serve", "--port", "0"])
-      const cfg = vscode.workspace.getConfiguration("kilo-code.new")
+      const cfg = vscode.workspace.getConfiguration("babel-code.new")
       const claudeCompat = cfg.get<boolean>("claudeCodeCompat", false)
       // Pin cwd so the CLI doesn't inherit the extension host's cwd ("/" under F5 debug)
       // or "$HOME" in empty VS Code windows.
@@ -109,7 +109,7 @@ export class ServerManager {
       //     trust store (Windows cert store, macOS keychain, Linux /etc/ssl).
       //     Mirrors VS Code's `http.systemCertificates` default (true).
       //   - Allow users behind MITM proxies to point at a custom CA bundle via
-      //     `kilo-code.new.extraCaCerts` (NODE_EXTRA_CA_CERTS).
+      //     `babel-code.new.extraCaCerts` (NODE_EXTRA_CA_CERTS).
       //   - Honor VS Code's `http.proxyStrictSSL=false` as an explicit opt-out
       //     from verification, matching what VS Code already does for its own
       //     requests. Users explicitly set that; we don't flip it ourselves.
@@ -145,7 +145,7 @@ export class ServerManager {
           KILOCODE_FEATURE: "vscode-extension",
           ...indexingEnv,
           KILO_TELEMETRY_LEVEL: vscode.env.isTelemetryEnabled ? "all" : "off",
-          KILO_APP_NAME: "kilo-code",
+          KILO_APP_NAME: "babel-code",
           KILO_EDITOR_NAME: vscode.env.appName,
           KILO_PLATFORM: "vscode",
           KILO_MACHINE_ID: vscode.env.machineId,

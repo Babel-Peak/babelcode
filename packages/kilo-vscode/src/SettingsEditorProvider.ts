@@ -48,9 +48,9 @@ export class SettingsEditorProvider implements vscode.Disposable {
     return resolvePanelProjectDirectory(active, vscode.workspace.workspaceFolders)
   }
 
-  /** Extract the PanelView from a viewType string like "kilo-code.new.settingsPanel". */
+  /** Extract the PanelView from a viewType string like "babel-code.new.settingsPanel". */
   static viewFromType(type: string): PanelView | undefined {
-    const match = type.match(/^kilo-code\.new\.(\w+)Panel$/)
+    const match = type.match(/^babel-code\.new\.(\w+)Panel$/)
     if (!match) return undefined
     const view = match[1] as PanelView
     if (!(view in PANEL_TITLES)) return undefined
@@ -77,7 +77,7 @@ export class SettingsEditorProvider implements vscode.Disposable {
     }
 
     const panel = vscode.window.createWebviewPanel(
-      `kilo-code.new.${view}Panel`,
+      `babel-code.new.${view}Panel`,
       PANEL_TITLES[view],
       vscode.ViewColumn.Active,
       {

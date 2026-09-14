@@ -26,7 +26,7 @@ function thread(over: Partial<PRComment> = {}): PRComment {
   return {
     id: "PRRC_1",
     threadId: "PRRT_1",
-    author: "kilo-code-bot",
+    author: "babel-code-bot",
     body: "preventDefault runs before the file opens",
     file: "src/open.ts",
     line: 3,

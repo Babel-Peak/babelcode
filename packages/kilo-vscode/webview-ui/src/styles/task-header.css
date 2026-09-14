@@ -278,6 +278,18 @@
   animation: timeline-pulse 2s ease-in-out infinite 0.5s;
 }
 
+/* Viewport indicator: the line under the bars marking the span of transcript
+ * currently visible in the chat. It moves while scrolling, mirroring the
+ * actions ("task", "reasoning", ...) on screen. Geometry (left/width/top/
+ * height) is set inline from the timeline constants. */
+.task-timeline-viewport {
+  position: absolute;
+  border-radius: 1px;
+  background: var(--vscode-focusBorder);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
 .task-timeline-tooltip {
   position: fixed;
   max-width: min(320px, calc(100vw - 16px));

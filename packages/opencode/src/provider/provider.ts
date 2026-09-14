@@ -1592,6 +1592,11 @@ const layer = Layer.effect(
         for (const [id, provider] of Object.entries(database)) {
           const providerID = ProviderV2.ID.make(id)
           if (disabled.has(providerID)) continue
+          // kilocode_change start - configured OpenRouter credentials are preferred over container env credentials
+          const configured = auths[providerID]?.type === "api" || Boolean(provider.options?.apiKey)
+          const useEnv = providerID !== ProviderV2.ID.openrouter || provider.options?.useEnv === true
+          if (configured && !useEnv) continue
+          // kilocode_change end
           // kilocode_change start - prefer explicit OAuth auth over inherited env credentials
           if (
             auths[providerID]?.type === "oauth" &&
@@ -1613,6 +1618,11 @@ const layer = Layer.effect(
           const providerID = ProviderV2.ID.make(id)
           if (disabled.has(providerID)) continue
           if (provider.type === "api") {
+            // kilocode_change start - allow OpenRouter's container env to be explicitly preferred
+            const configProvider = database[providerID]
+            const useEnv = providerID === ProviderV2.ID.openrouter && configProvider?.options?.useEnv === true
+            if (useEnv && configProvider?.env.some((item) => envs[item])) continue
+            // kilocode_change end
             mergeProvider(providerID, {
               source: "api",
               key: providerKey(providerID, provider), // kilocode_change - keep structured credentials provider-specific

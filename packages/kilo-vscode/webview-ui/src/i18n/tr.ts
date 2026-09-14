@@ -296,13 +296,12 @@ export const dict = {
   "session.messages.loadEarlier": "Önceki mesajları yükle",
   "session.messages.loading": "Mesajlar yükleniyor...",
 
-  "sidebar.topBar.label": "Kilo Code Gezinme",
+  "sidebar.topBar.label": "Babel Code Gezinme",
   "sidebar.topBar.newTask": "Yeni Görev",
   "sidebar.topBar.history": "Geçmiş",
   "sidebar.topBar.agentManager": "Agent Manager",
-  "sidebar.topBar.kiloClaw": "KiloClaw",
   "sidebar.topBar.marketplace": "Marketplace",
-  "sidebar.topBar.profile": "Profil",
+  "sidebar.topBar.browser": "Tarayıcı Önizlemesi",
   "sidebar.topBar.settings": "Ayarlar",
   "sidebar.session.newSession": "Yeni Oturum",
   "sidebar.session.newSession.tooltip": "Mevcut oturumu koruyarak yeni bir konuşma başlatın.",
@@ -390,7 +389,6 @@ export const dict = {
   "settings.providers.section.connected": "Bağlı sağlayıcılar",
   "settings.providers.connected.empty": "Bağlı sağlayıcı yok",
   "settings.providers.section.popular": "Popüler sağlayıcılar",
-  "settings.providers.tag.gateway": "Gateway",
   "settings.providers.tag.environment": "Ortam",
   "settings.providers.tag.config": "Yapılandırma",
   "settings.providers.tag.chatgpt": "ChatGPT",
@@ -576,7 +574,7 @@ export const dict = {
   "deviceAuth.toast.codeCopied": "Kod panoya kopyalandı",
   "deviceAuth.toast.errorCopied": "Hata panoya kopyalandı",
   "deviceAuth.status.initiating": "Giriş başlatılıyor...",
-  "deviceAuth.title": "Kilo Code'a giriş yap",
+  "deviceAuth.title": "Babel Code'a giriş yap",
   "deviceAuth.step1": "Adım 1: Bu URL'yi açın",
   "deviceAuth.action.copyUrl": "URL'yi Kopyala",
   "deviceAuth.action.openBrowser": "Tarayıcıyı Aç",
@@ -599,7 +597,7 @@ export const dict = {
 
   "profile.title": "Profil",
   "profile.notLoggedIn": "Giriş yapılmadı",
-  "profile.action.login": "Kilo Code ile giriş yap",
+  "profile.action.login": "Babel Code ile giriş yap",
   "profile.balance.title": "Bakiye",
   "profile.balance.refresh": "Bakiyeyi yenile",
   "profile.usage.title": "Planlar ve kullanım",
@@ -703,10 +701,10 @@ export const dict = {
 
   "settings.experimental.title": "Deneysel",
   "settings.language.title": "Dil",
-  "settings.aboutKiloCode.title": "Kilo Code Hakkında",
+  "settings.aboutKiloCode.title": "Babel Code Hakkında",
 
   "session.messages.welcome":
-    "Kilo Code bir yapay zeka kodlama asistanıdır. Özellik geliştirmesini, hata düzeltmesini veya kod tabanınızı açıklamasını isteyin.",
+    "Babel Code bir yapay zeka kodlama asistanıdır. Özellik geliştirmesini, hata düzeltmesini veya kod tabanınızı açıklamasını isteyin.",
   "session.messages.scrollToBottom": "En alta kaydır",
   "session.messages.initializing": "Başlatılıyor...",
   "session.messages.taskStarting": "Başlıyor...",
@@ -810,7 +808,7 @@ export const dict = {
   "settings.browser.headless.description": "Başsız modda çalıştır (görünür tarayıcı penceresi yok).",
 
   "settings.language.description":
-    '"Otomatik" VS Code görüntüleme dilinizi kullanır. Kilo Code arayüzü için dil seçin.',
+    '"Otomatik" VS Code görüntüleme dilinizi kullanır. Babel Code arayüzü için dil seçin.',
   "settings.language.auto": "Otomatik (VS Code dili)",
   "settings.language.current": "Mevcut:",
 
@@ -1109,6 +1107,7 @@ export const dict = {
   "settings.models.hidePromptTraining.title": "İstemlerle eğitilen modelleri gizle",
   "settings.models.hidePromptTraining.description":
     "Sağlayıcıları istemlerinizi eğitim için kullanabilecek Kilo Gateway modellerini gizleyin.",
+  "settings.providers.modeModels.variant": "Varsayılan akıl yürütme",
   "settings.providers.modeModels": "Mod Başına Model",
   "settings.providers.modeModels.description":
     "Belirli modlar için varsayılan modeli geçersiz kılın. Ayarlanmadıysa genel varsayılan model kullanılır.",
@@ -1131,12 +1130,12 @@ export const dict = {
   "settings.legacyMigration.link": "Eski Sürümden Taşı",
   "settings.aboutKiloCode.legacyMigration.title": "Eski Sürüm Taşıma",
   "settings.aboutKiloCode.legacyMigration.description":
-    "Sağlayıcı API anahtarları ve varsayılan model dahil olmak üzere Kilo Code'un önceki yüklemesinden ayarları taşıyın.",
+    "Sağlayıcı API anahtarları ve varsayılan model dahil olmak üzere Babel Code'un önceki yüklemesinden ayarları taşıyın.",
   "settings.aboutKiloCode.rooImport.description": "Bir Roo Code yüklemesinden konuşma geçmişini içe aktarın.",
   "settings.aboutKiloCode.rooImport.button": "Roo Code'dan Oturumları İçe Aktar",
 
   // Screen 1 — What's New
-  "migration.whatsNew.title": "Kilo Code'daki Yenilikler",
+  "migration.whatsNew.title": "Babel Code'daki Yenilikler",
   "migration.whatsNew.badge": "Beta",
   "migration.whatsNew.subtitle": "Uzantıyı daha hızlı ve daha verimli bir temel üzerine yeniden inşa ettik.",
   "migration.whatsNew.features.performance.title": "Daha Hızlı Ajan Performansı",

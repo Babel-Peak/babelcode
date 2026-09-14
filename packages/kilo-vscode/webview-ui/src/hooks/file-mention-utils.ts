@@ -211,9 +211,9 @@ export function getMentionRemovalRange(
   paths: Set<string>,
 ): { start: number; end: number } | null {
   const before = text.slice(0, position)
-  const all = [...[...paths].sort((a, b) => b.length - a.length), TERMINAL_MENTION, GIT_CHANGES_MENTION]
+  const all = [...paths, TERMINAL_MENTION, GIT_CHANGES_MENTION].sort((a, b) => b.length - a.length)
   for (const path of all) {
-    const token = `@${path}`
+    const token = path.startsWith("@") || path.startsWith("[") ? path : `@${path}`
     if (before.endsWith(token)) {
       const start = position - token.length
       const trailing = /^\s/.test(text.slice(position)) ? 1 : 0
@@ -228,12 +228,10 @@ export function getMentionRemovalRange(
  */
 export function isCursorAtMentionEnd(text: string, position: number, paths: Set<string>): boolean {
   const before = text.slice(0, position)
-  const sorted = [...paths].sort((a, b) => b.length - a.length)
+  const sorted = [...paths, TERMINAL_MENTION, GIT_CHANGES_MENTION].sort((a, b) => b.length - a.length)
   for (const path of sorted) {
-    if (before.endsWith(`@${path}`)) return true
-  }
-  for (const builtin of [TERMINAL_MENTION, GIT_CHANGES_MENTION]) {
-    if (before.endsWith(`@${builtin}`)) return true
+    const token = path.startsWith("@") || path.startsWith("[") ? path : `@${path}`
+    if (before.endsWith(token)) return true
   }
   return false
 }
@@ -254,7 +252,7 @@ export function findMentionRange(
   // Check longest first to avoid partial matches
   all.sort((a, b) => b.length - a.length)
   for (const path of all) {
-    const token = `@${path}`
+    const token = path.startsWith("@") || path.startsWith("[") ? path : `@${path}`
     let idx = text.indexOf(token)
     while (idx !== -1) {
       const end = idx + token.length

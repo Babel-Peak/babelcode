@@ -38,6 +38,8 @@ import { useSpeechToText } from "../speech-to-text/useSpeechToText"
 import { useSpeechToTextModels } from "../../context/speech-to-text-models"
 import { createSpeechShortcut } from "../speech-to-text/shortcut"
 import { useImageAttachments, type ImageAttachment } from "../../hooks/useImageAttachments"
+import { useCodeContext, type CodeContext } from "../../hooks/useCodeContext"
+import { useBrowserElements } from "../../hooks/useBrowserElements"
 import { convertToMentionPath } from "../../utils/path-mentions"
 import { SessionMentionPicker } from "./SessionMentionPicker"
 import { WorktreeMentionPicker } from "./WorktreeMentionPicker"
@@ -50,10 +52,15 @@ import {
   buildHighlightSegments,
   atEnd,
   insertSpacedText,
+  findTokenDeletionRange,
   isPromptBusy,
   isPathMention,
+  isInlineContextToken,
+  codeContextToken,
+  browserElementToken,
   applySandboxStates,
   memoryRest,
+  buildPromptMessage,
   type SandboxDefaultState,
   type SandboxState,
 } from "./prompt-input-utils"
@@ -70,6 +77,7 @@ import {
   beginPendingSend,
   clearPendingDraftDiscarded,
   clearSessionDraftDiscarded,
+  codeContextDrafts,
   drafts,
   finishPendingSend,
   imageDrafts,
@@ -205,11 +213,17 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const terminal = useTerminalContext(props.resolveEmbeddedTerminal)
   const git = useGitChangesContext(vscode, ctx, hasGit)
   const imageAttach = useImageAttachments()
+  const codeCtx = useCodeContext()
+  const browserEls = useBrowserElements()
   imageAttach.setFilePathDropHandler((paths) => {
     const cwd = server.workspaceDirectory()
     const resolved = paths.map((p) => convertToMentionPath(p, cwd))
+    console.log("[Kilo New] [DnD Debug] setFilePathDropHandler invoked:", { paths, cwd, resolved })
     const ref = textareaRef
-    if (!ref) return
+    if (!ref) {
+      console.warn("[Kilo New] [DnD Debug] setFilePathDropHandler: textareaRef is null!")
+      return
+    }
     const val = ref.value
     const cursor = ref.selectionStart ?? val.length
     const before = val.substring(0, cursor)
@@ -221,6 +235,17 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     mention.addPaths(resolved, cwd)
     const pos = cursor + inserted.length + 1
     ref.setSelectionRange(pos, pos)
+    ref.focus()
+    adjustHeight()
+  })
+  imageAttach.setTextDropHandler((dropped) => {
+    const ref = textareaRef
+    if (!ref) return
+    const val = ref.value
+    const cursor = ref.selectionStart ?? val.length
+    ref.value = val.substring(0, cursor) + dropped + val.substring(cursor)
+    setText(ref.value)
+    ref.setSelectionRange(cursor + dropped.length, cursor + dropped.length)
     ref.focus()
     adjustHeight()
   })
@@ -243,12 +268,14 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     comments: ReviewCommentEntry[],
     imgs: ImageAttachment[],
     scroll = textareaRef?.scrollTop ?? scrollDrafts.get(key) ?? 0,
-  ) => savePromptDraft(key, next, comments, imgs, scroll)
+    contexts: CodeContext[] = codeCtx.items(),
+  ) => savePromptDraft(key, next, comments, imgs, scroll, contexts)
   const readDraft = () => ({
     text: text().trim(),
     comments: reviewComments(),
     images: imageAttach.images(),
     scroll: textareaRef?.scrollTop ?? scrollDrafts.get(draftKey()) ?? 0,
+    codeContexts: codeCtx.items(),
   })
 
   const [text, setText] = createSignal("")
@@ -390,8 +417,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         const val = untrack(text)
         const comments = untrack(reviewComments)
         const imgs = untrack(imageAttach.images)
-        if (val || comments.length > 0 || imgs.length > 0 || drafts.has(prev)) {
-          saveDraft(prev, val, comments, imgs)
+        const ctxs = untrack(codeCtx.items)
+        if (val || comments.length > 0 || imgs.length > 0 || ctxs.length > 0 || drafts.has(prev)) {
+          saveDraft(prev, val, comments, imgs, undefined, ctxs)
         }
       }
       const draft = drafts.get(key) ?? ""
@@ -401,6 +429,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       mention.seedFromText(draft)
       setReviewComments(pending)
       imageAttach.replace(imageDrafts.get(key) ?? [])
+      codeCtx.replace(codeContextDrafts.get(key) ?? [])
+      // Browser-element badges are not persisted across session switches.
+      browserEls.clear()
       setEnhancing(false)
       preEnhanceText = null
       history.reset()
@@ -476,11 +507,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     const draft = text().trim()
     const comments = reviewComments()
     const imgs = imageAttach.images()
+    const ctxs = codeCtx.items()
     const scroll = textareaRef?.scrollTop ?? 0
     const id = tabs?.add()
     if (!id) session.clearCurrentSession()
     const key = id ? scopeDraftKey(boxKey(), pendingDraftKey(id) ?? "new") : draftKey()
-    saveDraft(key, draft, comments, imgs, scroll)
+    saveDraft(key, draft, comments, imgs, scroll, ctxs)
   }
   window.addEventListener("newTaskRequest", onNewTaskRequest)
   onCleanup(() => window.removeEventListener("newTaskRequest", onNewTaskRequest))
@@ -502,7 +534,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     const draft = captured.get(id)
     captured.delete(id)
     if (!draft) return
-    saveDraft(scopeDraftKey(box, sessionDraftKey(sid)), draft.text, draft.comments, draft.images, draft.scroll)
+    const targetKey = scopeDraftKey(box, sessionDraftKey(sid))
+    saveDraft(targetKey, draft.text, draft.comments, draft.images, draft.scroll)
+    if (draft.codeContexts && draft.codeContexts.length > 0) {
+      codeContextDrafts.set(targetKey, draft.codeContexts)
+    }
   }
   window.addEventListener("agentManagerApplyDraft", onAgentManagerApplyDraft)
   onCleanup(() => window.removeEventListener("agentManagerApplyDraft", onAgentManagerApplyDraft))
@@ -531,6 +567,32 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   window.addEventListener("exportSessionTranscript", onExport)
   onCleanup(() => window.removeEventListener("exportSessionTranscript", onExport))
 
+  const onWindowDragEnter = (e: DragEvent) => {
+    imageAttach.handleDragEnter(e)
+  }
+  const onWindowDragOver = (e: DragEvent) => {
+    imageAttach.handleDragOver(e)
+  }
+  const onWindowDragLeave = (e: DragEvent) => {
+    if (!e.relatedTarget || e.relatedTarget === document.documentElement) {
+      imageAttach.handleDragLeave(e)
+    }
+  }
+  const onWindowDrop = (e: DragEvent) => {
+    console.log("[Kilo New] [DnD Debug] onWindowDrop fired")
+    imageAttach.handleDrop(e)
+  }
+  document.addEventListener("dragenter", onWindowDragEnter, true)
+  document.addEventListener("dragover", onWindowDragOver, true)
+  document.addEventListener("dragleave", onWindowDragLeave, true)
+  document.addEventListener("drop", onWindowDrop, true)
+  onCleanup(() => {
+    document.removeEventListener("dragenter", onWindowDragEnter, true)
+    document.removeEventListener("dragover", onWindowDragOver, true)
+    document.removeEventListener("dragleave", onWindowDragLeave, true)
+    document.removeEventListener("drop", onWindowDrop, true)
+  })
+
   const isBusy = () =>
     isPromptBusy(session.status(), !!props.suggesting?.(), !!props.questioning?.(), session.submitting())
   const showIndexing = () =>
@@ -543,7 +605,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const isDisabled = () => !server.isConnected()
   const canUseSpeech = () => canUseSpeechToText(config(), provider.authStates())
   const speechModel = () => selectedSpeechToTextModel(config(), speechModels.models())
-  const hasInput = () => text().trim().length > 0 || imageAttach.images().length > 0 || reviewComments().length > 0
+  const hasInput = () =>
+    text().trim().length > 0 ||
+    imageAttach.images().length > 0 ||
+    reviewComments().length > 0 ||
+    codeCtx.items().length > 0 ||
+    browserEls.items().length > 0
   const canSend = () =>
     !isDisabled() &&
     !terminal.pending() &&
@@ -563,6 +630,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     for (const token of mention.mentionedSessions().keys()) paths.add(token)
     if (hasTerminalMention(text())) paths.add("terminal")
     if (hasGit() && hasGitChangesMention(text())) paths.add("git-changes")
+    for (const c of codeCtx.items()) paths.add(codeContextToken(c))
+    for (const b of browserEls.items()) paths.add(browserElementToken(b))
     return paths
   }
   const placeholder = () => {
@@ -616,7 +685,14 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return
     }
     // Do not overwrite a new draft the user started while the send was in flight.
-    if (text().trim() || reviewComments().length > 0 || imageAttach.images().length > 0) return
+    if (
+      text().trim() ||
+      reviewComments().length > 0 ||
+      imageAttach.images().length > 0 ||
+      codeCtx.items().length > 0 ||
+      browserEls.items().length > 0
+    )
+      return
     replaceReviewComments(comments)
     if (draft) {
       setText(draft)
@@ -718,6 +794,48 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     return true
   }
 
+  const insertTokenAtCursor = (token: string) => {
+    const textarea = textareaRef
+    const current = text()
+    const start = textarea?.selectionStart ?? current.length
+    const end = textarea?.selectionEnd ?? start
+    const result = insertSpacedText(current, token, start, end)
+    setText(result.text)
+    if (textarea) {
+      textarea.value = result.text
+      adjustHeight()
+      textarea.focus()
+      textarea.setSelectionRange(result.pos, result.pos)
+      syncHighlightScroll()
+    }
+  }
+
+  const applyCodeContext = (message: ExtensionMessage) => {
+    if (message.type !== "addCodeContext") return
+    const item = {
+      id: crypto.randomUUID(),
+      path: message.filePath,
+      startLine: message.startLine,
+      endLine: message.endLine,
+      text: message.selectedText,
+    }
+    codeCtx.add(item)
+    insertTokenAtCursor(codeContextToken(item))
+  }
+
+  const applyBrowserElement = (message: ExtensionMessage) => {
+    if (message.type !== "addBrowserElement") return
+    const item = { id: crypto.randomUUID(), label: message.label, text: message.text }
+    browserEls.add(item)
+    insertTokenAtCursor(browserElementToken(item))
+  }
+
+  const applyImage = (message: ExtensionMessage) => {
+    if (message.type !== "addImage") return
+    imageAttach.addDataUrl(message.filename, message.mime, message.dataUrl)
+    textareaRef?.focus()
+  }
+
   const unsubscribe = vscode.onMessage((message) => {
     if (handleSandboxMessage(message)) return
 
@@ -762,6 +880,10 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       }
     }
 
+    applyCodeContext(message)
+    applyBrowserElement(message)
+    applyImage(message)
+
     if (message.type === "appendReviewComments") {
       const empty = !text().trim() && reviewComments().length === 0 && imageAttach.images().length === 0
       const merged = mergeReviewComments(reviewComments(), message.comments)
@@ -794,6 +916,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           source,
           target,
         )
+        const ctxDraft = codeContextDrafts.get(source)
+        if (ctxDraft) {
+          codeContextDrafts.set(target, ctxDraft)
+          codeContextDrafts.delete(source)
+        }
       }
       if (
         message.draftID &&
@@ -911,6 +1038,56 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     ghost.scheduleRequest(val, textareaRef)
   }
 
+  const handleTokenDeletion = (e: KeyboardEvent): boolean => {
+    if ((e.key !== "Backspace" && e.key !== "Delete") || e.isComposing || !textareaRef) return false
+    const textarea = textareaRef
+    const range = findTokenDeletionRange(
+      textarea.value,
+      textarea.selectionStart ?? 0,
+      textarea.selectionEnd ?? 0,
+      highlightMentions(),
+      e.key,
+    )
+    if (!range) return false
+    e.preventDefault()
+    textarea.setSelectionRange(range.start, range.end)
+    document.execCommand("insertText", false, "")
+    setText(textarea.value)
+    adjustHeight()
+    syncHighlightScroll()
+    return true
+  }
+
+  const handlePromptHistoryNavigation = (e: KeyboardEvent): boolean => {
+    if ((e.key !== "ArrowUp" && e.key !== "ArrowDown") || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false
+    const start = textareaRef?.selectionStart ?? 0
+    const end = textareaRef?.selectionEnd ?? 0
+    if (start !== end) return false
+    const direction = e.key === "ArrowUp" ? ("up" as const) : ("down" as const)
+    const entry = history.navigate(direction, text(), start)
+    if (entry === null) return false
+    e.preventDefault()
+    setText(entry)
+    if (textareaRef) {
+      textareaRef.value = entry
+      adjustHeight()
+      const pos = direction === "up" ? 0 : entry.length
+      textareaRef.setSelectionRange(pos, pos)
+    }
+    return true
+  }
+
+  const handleShiftTabVariantCycle = (e: KeyboardEvent): boolean => {
+    if (e.key !== "Tab" || !e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return false
+    if (settings()["chat.shiftTabCyclesVariant"] === false) return false
+    const list = session.variantList(sid())
+    if (list.length === 0) return false
+    const next = cycleVariant(session.currentVariant(sid()), list)
+    e.preventDefault()
+    session.selectVariant(next, sid())
+    return true
+  }
+
   const handleKeyDown = (e: KeyboardEvent) => {
     // Undo enhanced prompt with Ctrl+Z / ⌘Z
     if (e.key === "z" && (e.metaKey || e.ctrlKey) && !e.shiftKey && preEnhanceText !== null) {
@@ -925,7 +1102,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return
     }
 
-    // Atomic mention removal on backspace
+    if (handleTokenDeletion(e)) return
+
+    // Atomic mention removal on backspace fallback
     if (
       mention.handleBackspace(e, textareaRef, setText, () => {
         adjustHeight()
@@ -949,38 +1128,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return
     }
 
-    // Prompt history: ArrowUp/ArrowDown at cursor boundaries cycles through sent prompts
-    if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-      const start = textareaRef?.selectionStart ?? 0
-      const end = textareaRef?.selectionEnd ?? 0
-      if (start !== end) return // don't replace active text selection
-      const cursor = start
-      const direction = e.key === "ArrowUp" ? ("up" as const) : ("down" as const)
-      const entry = history.navigate(direction, text(), cursor)
-      if (entry !== null) {
-        e.preventDefault()
-        setText(entry)
-        if (textareaRef) {
-          textareaRef.value = entry
-          adjustHeight()
-          const pos = direction === "up" ? 0 : entry.length
-          textareaRef.setSelectionRange(pos, pos)
-        }
-        return
-      }
-    }
-
-    // Shift+Tab cycles reasoning effort variants (setting: chat.shiftTabCyclesVariant).
-    // When disabled or no variants exist, fall through to default focus navigation.
-    if (e.key === "Tab" && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      if (settings()["chat.shiftTabCyclesVariant"] === false) return
-      const list = session.variantList(sid())
-      if (list.length === 0) return
-      const next = cycleVariant(session.currentVariant(sid()), list)
-      e.preventDefault()
-      session.selectVariant(next, sid())
-      return
-    }
+    if (handlePromptHistoryNavigation(e)) return
+    if (handleShiftTabVariantCycle(e)) return
 
     if (e.key === "Tab" && !e.shiftKey && ghost.text()) {
       if (!isAtEnd()) return
@@ -1168,6 +1317,25 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     }
   }
 
+  const clearDraftState = (key: string) => {
+    drafts.delete(key)
+    reviewDrafts.delete(key)
+    imageDrafts.delete(key)
+    codeContextDrafts.delete(key)
+    scrollDrafts.delete(key)
+  }
+
+  const resetInput = () => {
+    setText("")
+    clearReviewComments()
+    imageAttach.clear()
+    codeCtx.clear()
+    browserEls.clear()
+    mention.closeMention()
+    slash.close()
+    if (textareaRef) textareaRef.style.height = "auto"
+  }
+
   const handleSend = async () => {
     const draft = text().trim()
 
@@ -1176,15 +1344,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       if (!runMemory(memory)) return
       history.append(draft)
       setMemoryText(memory)
-      clearReviewComments()
-      imageAttach.clear()
-      mention.closeMention()
-      slash.close()
-      drafts.delete(draftKey())
-      reviewDrafts.delete(draftKey())
-      imageDrafts.delete(draftKey())
-      scrollDrafts.delete(draftKey())
-      if (textareaRef) textareaRef.style.height = "auto"
+      clearDraftState(draftKey())
+      resetInput()
       return
     }
 
@@ -1201,15 +1362,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (matched?.action) {
       if (matched.enabled && !matched.enabled()) return
       setText("")
-      clearReviewComments()
-      imageAttach.clear()
-      mention.closeMention()
-      slash.close()
-      drafts.delete(draftKey())
-      reviewDrafts.delete(draftKey())
-      imageDrafts.delete(draftKey())
-      scrollDrafts.delete(draftKey())
-      if (textareaRef) textareaRef.style.height = "auto"
+      clearDraftState(draftKey())
+      resetInput()
       matched.action()
       return
     }
@@ -1217,7 +1371,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     const imgs = imageAttach.images()
     const pending = reviewComments()
     const review = pending.length > 0 ? formatReviewCommentsMarkdown(pending) : ""
-    const message = draft && review ? `${review}\n\n${draft}` : draft || review
+    const message = buildPromptMessage(draft, codeCtx.items(), review, browserEls.items())
     const data = review ? { version: 1 as const, comments: pending } : undefined
     if (
       (!message && imgs.length === 0) ||
@@ -1295,30 +1449,17 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     }
 
     drafts.delete(key)
-    reviewDrafts.delete(key)
-    imageDrafts.delete(key)
-    scrollDrafts.delete(key)
+    clearDraftState(key)
     history.append(draft)
     if (draftKey() !== key) return
 
     history.reset()
     setText("")
-    clearReviewComments()
-    imageAttach.clear()
-    mention.closeMention()
-    slash.close()
-
-    if (textareaRef) textareaRef.style.height = "auto"
+    resetInput()
   }
 
   return (
-    <div
-      class="prompt-input-container"
-      classList={{ "prompt-input-container--dragging": imageAttach.dragging() }}
-      onDragOver={imageAttach.handleDragOver}
-      onDragLeave={imageAttach.handleDragLeave}
-      onDrop={imageAttach.handleDrop}
-    >
+    <div class="prompt-input-container" classList={{ "prompt-input-container--dragging": imageAttach.dragging() }}>
       <Show when={reviewComments().length > 0}>
         <ReviewComments
           comments={reviewComments()}
@@ -1484,8 +1625,25 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 <Show when={seg().highlight} fallback={<span>{seg().text}</span>}>
                   <span
                     class="prompt-input-file-mention"
-                    classList={{ "prompt-input-file-mention--file": isPathMention(seg().text) }}
+                    classList={{
+                      "prompt-input-file-mention--file": isPathMention(seg().text) && !isInlineContextToken(seg().text),
+                    }}
                     onClick={(e) => {
+                      if (isInlineContextToken(seg().text)) {
+                        const token = seg().text
+                        const matched = codeCtx.items().find((c) => codeContextToken(c) === token)
+                        if (matched) {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          vscode.postMessage({
+                            type: "openFile",
+                            filePath: matched.path,
+                            line: matched.startLine,
+                            sessionID: sid(),
+                          })
+                        }
+                        return
+                      }
                       if (!isPathMention(seg().text)) return
                       if (mention.mentionedSessions().has(seg().text.replace(/^@/, ""))) return
                       e.preventDefault()
