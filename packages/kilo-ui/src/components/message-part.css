@@ -919,3 +919,155 @@ html[data-theme="kilo-vscode"] [data-component="reasoning-part"] {
     animation-duration: 0.01ms;
   }
 }
+
+/* kilocode_change start - MCP tool clarity pass: section framing for the
+   generic McpTool fallback, plus dedicated cards for docgraph's two
+   highest-traffic tools (search_knowledge citations, propose_memory). */
+[data-slot="mcp-section-label"] {
+  margin-bottom: 4px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-weaker);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+[data-slot="mcp-tool-divider"] {
+  height: 1px;
+  margin: 10px 0;
+  background: var(--border-weak-base);
+}
+
+[data-component="tool-output"][data-variant="mcp"] {
+  padding: 8px 10px;
+  border: 1px solid var(--border-weak-base);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised-base);
+
+  /* The shared markdown renderer's default heading/paragraph rhythm (e.g.
+     p:has(strong) { margin-top: 24px } above) is sized for full chat prose;
+     inside a compact tool card it reads as disconnected fragments. */
+  [data-component="markdown"] {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin: 0 0 4px;
+      color: var(--text-weak);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-medium);
+    }
+
+    p {
+      margin: 0 0 8px;
+
+      &:has(strong) {
+        margin-top: 0;
+      }
+    }
+
+    > *:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+[data-slot="docgraph-empty"] {
+  padding: 8px 2px;
+  color: var(--text-weaker);
+  font-size: var(--font-size-small);
+}
+
+[data-component="docgraph-citations"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-component="docgraph-citation"] {
+  padding: 8px 10px;
+  border: 1px solid var(--border-weak-base);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised-base);
+}
+
+[data-slot="docgraph-citation-header"] {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+[data-slot="docgraph-citation-title"] {
+  overflow: hidden;
+  color: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-slot="docgraph-citation-score"] {
+  flex-shrink: 0;
+  color: var(--text-weaker);
+  font-family: var(--font-family-mono, monospace);
+  font-size: var(--kilo-font-size-12);
+}
+
+[data-slot="docgraph-citation-provenance"] {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-weaker);
+  font-family: var(--font-family-mono, monospace);
+  font-size: var(--kilo-font-size-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-slot="docgraph-citation-excerpt"] {
+  margin-top: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  color: var(--text-weak);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-normal);
+  white-space: pre-wrap;
+}
+
+[data-slot="docgraph-memory-content"] {
+  padding: 8px 10px;
+  border: 1px solid var(--border-weak-base);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised-base);
+  color: var(--text-base);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-normal);
+  white-space: pre-wrap;
+}
+
+[data-slot="docgraph-memory-action"] {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--kilo-font-size-12);
+  font-weight: var(--font-weight-medium);
+}
+
+[data-slot="docgraph-memory-action"][data-action="ADD"] {
+  background: color-mix(in srgb, var(--icon-success-base) 18%, transparent);
+  color: var(--icon-success-base);
+}
+
+[data-slot="docgraph-memory-action"][data-action="UPDATE"] {
+  background: color-mix(in srgb, var(--icon-warning-base) 18%, transparent);
+  color: var(--icon-warning-base);
+}
+
+[data-slot="docgraph-memory-action"][data-action="NOOP"] {
+  background: var(--surface-tool-output-base);
+  color: var(--text-weaker);
+}
+/* kilocode_change end */

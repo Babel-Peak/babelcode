@@ -1234,15 +1234,53 @@ function ToolFileAccordion(props: { path: string; actions?: JSX.Element; childre
 
 // GenericTool (upstream) does not render output; this override does.
 // When hideDetails is true, render as a row (no content), otherwise as a panel with markdown output.
+// kilocode_change start - humanize namespaced MCP tool names ("docgraph_search_knowledge")
+// into a "server · action" pair instead of showing the raw snake_case tool
+// name, so which MCP server ran which action is legible at a glance. Tool
+// names arrive pre-flattened as `sanitize(clientName) + "_" + sanitize(name)`
+// (McpCatalog.toolName), so this can only recognize known server prefixes --
+// this fork currently only configures "docgraph" (see kilo.jsonc) -- and
+// falls back to humanizing the whole name for anything else.
+const KNOWN_MCP_SERVERS = ["docgraph"]
+
+export function splitMcpToolName(tool: string): { server?: string; action: string } {
+  for (const server of KNOWN_MCP_SERVERS) {
+    const prefix = server + "_"
+    if (tool.startsWith(prefix) && tool.length > prefix.length) return { server, action: tool.slice(prefix.length) }
+  }
+  return { action: tool }
+}
+
+export function humanizeMcpAction(action: string): string {
+  return action
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1))
+}
+// kilocode_change end
+
 function McpTool(props: ToolProps) {
   const i18n = useI18n()
   const labelKeys = ["description", "query", "url", "filePath", "path", "pattern", "name"]
   const skipKeys = new Set(labelKeys)
 
+  // kilocode_change
+  const parsedTool = createMemo(() => splitMcpToolName(props.tool))
+
   const subtitle = () =>
     labelKeys
       .map((key) => props.input?.[key])
       .find((value): value is string => typeof value === "string" && value.length > 0)
+
+  // kilocode_change
+  const displayTitle = createMemo(() => humanizeMcpAction(parsedTool().action))
+  // kilocode_change
+  const displaySubtitle = createMemo(() => {
+    const server = parsedTool().server
+    const detail = subtitle()
+    if (!server) return detail
+    return detail ? `${server} · ${detail}` : server
+  })
 
   const inputArgs = () => {
     if (!props.input) return []
@@ -1280,7 +1318,7 @@ function McpTool(props: ToolProps) {
           hideDetails
           icon="mcp"
           status={props.status}
-          trigger={{ title: props.tool, subtitle: subtitle(), args: inputArgs() }}
+          trigger={{ title: displayTitle(), subtitle: displaySubtitle(), args: inputArgs() }}
         />
       }
     >
@@ -1290,7 +1328,7 @@ function McpTool(props: ToolProps) {
         tool={props.tool}
         partID={props.partID}
         callID={props.callID}
-        trigger={{ title: props.tool, subtitle: subtitle(), args: inputArgs() }}
+        trigger={{ title: displayTitle(), subtitle: displaySubtitle(), args: inputArgs() }}
         defaultOpen={props.defaultOpen}
         forceOpen={props.forceOpen}
         locked={props.locked}
@@ -1299,7 +1337,7 @@ function McpTool(props: ToolProps) {
           {(text) => (
             <>
               <div data-slot="mcp-section-label">{i18n.t("ui.messagePart.mcp.input")}</div>
-              <div data-component="tool-output" data-scrollable>
+              <div data-component="tool-output" data-variant="mcp" data-scrollable>
                 <Markdown text={text()} />
               </div>
             </>
@@ -1312,7 +1350,7 @@ function McpTool(props: ToolProps) {
                 <div data-slot="mcp-tool-divider" />
               </Show>
               <div data-slot="mcp-section-label">{i18n.t("ui.messagePart.mcp.output")}</div>
-              <div data-component="tool-output" data-scrollable>
+              <div data-component="tool-output" data-variant="mcp" data-scrollable>
                 <Markdown text={text()} />
               </div>
             </>
@@ -3357,3 +3395,165 @@ ToolRegistry.register({
   name: "chart",
   render: ChartTool,
 })
+
+// kilocode_change start - purpose-built renderers for docgraph's two
+// highest-traffic MCP tools, so their structured JSON (citations with
+// provenance; a proposed memory's action) reads as an actual result instead
+// of a fenced JSON blob. Everything else docgraph exposes still falls
+// through to the generic McpTool renderer above -- this is deliberately not
+// exhaustive coverage of all 16 docgraph tools, just the two seen constantly
+// in normal use.
+type DocgraphCitation = {
+  document_id?: string
+  title?: string
+  score?: number
+  excerpt?: string
+  provenance?: {
+    source_filename?: string | null
+    section_path?: string[]
+    symbol?: string | null
+    line_start?: number | null
+    line_end?: number | null
+  }
+}
+
+function parseJson(text: string | undefined): any {
+  if (!text) return undefined
+  try {
+    return JSON.parse(text)
+  } catch {
+    return undefined
+  }
+}
+
+ToolRegistry.register({
+  name: "docgraph_search_knowledge",
+  render(props) {
+    const pending = createMemo(() => busy(props.status))
+    const query = createMemo(() => (typeof props.input?.query === "string" ? props.input.query : undefined))
+    const result = createMemo(() => parseJson(props.output))
+    const citations = createMemo<DocgraphCitation[] | undefined>(() => {
+      const value = result()?.citations
+      return Array.isArray(value) ? value : undefined
+    })
+
+    return (
+      <Show when={!pending() && citations()} fallback={<McpTool {...props} />}>
+        {(list) => (
+          <BasicTool
+            {...props}
+            icon="mcp"
+            trigger={
+              <ToolTriggerRow
+                title="Search knowledge"
+                pending={pending()}
+                subtitle={[
+                  "docgraph",
+                  query(),
+                  `${list().length} result${list().length === 1 ? "" : "s"}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+                animate={props.reveal}
+              />
+            }
+          >
+            <Show
+              when={list().length > 0}
+              fallback={<div data-slot="docgraph-empty">No matching passages found.</div>}
+            >
+              <div data-component="docgraph-citations">
+                <For each={list()}>
+                  {(citation) => {
+                    const provenanceLine = createMemo(() =>
+                      [
+                        citation.provenance?.source_filename,
+                        citation.provenance?.line_start != null
+                          ? `L${citation.provenance.line_start}${
+                              citation.provenance.line_end != null && citation.provenance.line_end !== citation.provenance.line_start
+                                ? `-${citation.provenance.line_end}`
+                                : ""
+                            }`
+                          : undefined,
+                        citation.provenance?.symbol,
+                      ]
+                        .filter(Boolean)
+                        .join(" · "),
+                    )
+                    return (
+                      <div data-component="docgraph-citation">
+                        <div data-slot="docgraph-citation-header">
+                          <span data-slot="docgraph-citation-title">
+                            {citation.title || citation.provenance?.source_filename || "Untitled document"}
+                          </span>
+                          <Show when={typeof citation.score === "number"}>
+                            <span data-slot="docgraph-citation-score">{citation.score!.toFixed(2)}</span>
+                          </Show>
+                        </div>
+                        <Show when={provenanceLine()}>
+                          <div data-slot="docgraph-citation-provenance">{provenanceLine()}</div>
+                        </Show>
+                        <Show when={citation.excerpt}>
+                          <div data-slot="docgraph-citation-excerpt" data-scrollable>
+                            {citation.excerpt}
+                          </div>
+                        </Show>
+                      </div>
+                    )
+                  }}
+                </For>
+              </div>
+            </Show>
+          </BasicTool>
+        )}
+      </Show>
+    )
+  },
+})
+
+const MEMORY_ACTION_LABEL: Record<string, string> = {
+  ADD: "Added",
+  UPDATE: "Updated",
+  NOOP: "Already known",
+}
+
+ToolRegistry.register({
+  name: "docgraph_propose_memory",
+  render(props) {
+    const pending = createMemo(() => busy(props.status))
+    const content = createMemo(() => (typeof props.input?.content === "string" ? props.input.content : undefined))
+    const kind = createMemo(() => (typeof props.input?.kind === "string" ? props.input.kind : "semantic"))
+    const result = createMemo(() => parseJson(props.output))
+    const action = createMemo<string | undefined>(() => {
+      const value = result()?.action
+      return typeof value === "string" ? value : undefined
+    })
+
+    return (
+      <BasicTool
+        {...props}
+        icon="brain"
+        trigger={
+          <ToolTriggerRow
+            title="Propose memory"
+            pending={pending()}
+            subtitle={`docgraph · ${kind()}`}
+            animate={props.reveal}
+          />
+        }
+      >
+        <Show when={content()}>
+          <div data-slot="docgraph-memory-content">{content()}</div>
+        </Show>
+        <Show when={action()}>
+          {(value) => (
+            <div data-slot="docgraph-memory-action" data-action={value().toUpperCase()}>
+              {MEMORY_ACTION_LABEL[value().toUpperCase()] ?? value()}
+            </div>
+          )}
+        </Show>
+      </BasicTool>
+    )
+  },
+})
+// kilocode_change end
