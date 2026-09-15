@@ -24,7 +24,7 @@ jobs:
   # kilocode_change start
   changes:
     name: detect general unit test changes
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
@@ -262,7 +262,7 @@ jobs:
     name: HttpApi exerciser
     needs: changes
     if: needs.changes.outputs.general == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -316,7 +316,7 @@ jobs:
   # kilocode_change start
   unit-required:
     name: unit (linux)
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     needs:
       - unit
     if: always()
@@ -329,7 +329,7 @@ jobs:
   # kilocode_change start
   required:
     name: test (linux)
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     needs:
       - changes
       - unit
