@@ -58,9 +58,12 @@ export async function activate(context: vscode.ExtensionContext) {
   const cloud = new CloudAuth(context)
   const token = await cloud.token()
   if (token) checkForUpdate(context, token)
-  else void vscode.window.showInformationMessage("Connect Babel Code to receive authenticated updates and cloud features.", "Sign in").then((choice) => {
-    if (choice === "Sign in") void cloud.signIn()
-  })
+  else
+    void vscode.window
+      .showInformationMessage("Connect Babel Code to receive authenticated updates and cloud features.", "Sign in")
+      .then((choice) => {
+        if (choice === "Sign in") void cloud.signIn()
+      })
   shuttingDown = false
 
   // Drives the "!babel-code.new.isCursor" guards on the native view/title and

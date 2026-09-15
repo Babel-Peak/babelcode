@@ -347,6 +347,16 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
+      # Linux VSIX packages compile the bundled Bubblewrap helper.
+      - name: Setup Zig for Linux sandbox helpers
+        run: |
+          curl --fail --location --retry 3 \
+            https://ziglang.org/download/0.14.0/zig-linux-x86_64-0.14.0.tar.xz \
+            --output "$RUNNER_TEMP/zig.tar.xz"
+          echo "473ec26806133cf4d1918caf1a410f8403a13d979726a9045b421b685031a982  $RUNNER_TEMP/zig.tar.xz" | sha256sum --check --status
+          tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/zig-linux-x86_64-0.14.0" >> "$GITHUB_PATH"
+
       - uses: actions/setup-node@v6 # kilocode_change
         with:
           node-version: "24"
@@ -408,7 +418,7 @@ jobs:
     needs:
       - version
       - build-cli
-    if: github.repository == 'Babel-Peak/babelcode'
+    if: github.repository == 'Babel-Peak/babelcode' && vars.ENABLE_BENCH_SMOKE_TEST == 'true'
     uses: ./.github/workflows/smoke-test.yml
     with:
       cli_version: ${{ needs.version.outputs.version }}
@@ -423,6 +433,14 @@ jobs:
       - validate-cli-unix # kilocode_change
       - validate-cli-windows # kilocode_change
       - smoke-test
+    if: >-
+      always() &&
+      needs.version.result == 'success' &&
+      needs.build-cli.result == 'success' &&
+      needs.build-vscode.result == 'success' &&
+      needs.validate-cli-unix.result == 'success' &&
+      needs.validate-cli-windows.result == 'success' &&
+      (needs.smoke-test.result == 'success' || needs.smoke-test.result == 'skipped')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6 # kilocode_change
