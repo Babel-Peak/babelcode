@@ -2,6 +2,7 @@ import * as fsp from "node:fs/promises"
 import * as os from "node:os"
 import * as path from "node:path"
 import * as vscode from "vscode"
+import { detect } from "./update-target"
 
 const extension = "babelcode.babel-code"
 const asset = "kilo-vscode"
@@ -17,7 +18,7 @@ async function check(context: vscode.ExtensionContext, token: string): Promise<v
   const current = vscode.extensions.getExtension(extension)?.packageJSON?.version
   if (typeof current !== "string") return
 
-  const release = await get<Release>(`${updateUrl}/latest?target=${encodeURIComponent(target())}`, token)
+  const release = await get<Release>(`${updateUrl}/latest?target=${encodeURIComponent(detect())}`, token)
   const version = release.version
   if (!version || !newer(current, version)) return
 
@@ -37,7 +38,7 @@ async function check(context: vscode.ExtensionContext, token: string): Promise<v
     return
   }
 
-  const name = `${asset}-${target()}.vsix`
+  const name = `${asset}-${detect()}.vsix`
   const file = path.join(os.tmpdir(), name)
   await download(new URL(release.downloadUrl, updateUrl).toString(), file, token)
   await vscode.commands.executeCommand("workbench.extensions.installExtension", vscode.Uri.file(file))
@@ -47,14 +48,6 @@ async function check(context: vscode.ExtensionContext, token: string): Promise<v
     "Reload",
   )
   if (reload === "Reload") await vscode.commands.executeCommand("workbench.action.reloadWindow")
-}
-
-function target(): string {
-  const platform = process.platform === "win32" ? "win32" : process.platform
-  const arch = process.arch === "arm64" ? "arm64" : "x64"
-  if (platform === "darwin") return `darwin-${arch}`
-  if (platform === "linux") return `linux-${arch}`
-  return `win32-${arch}`
 }
 
 function newer(current: string, next: string): boolean {
@@ -68,13 +61,17 @@ function newer(current: string, next: string): boolean {
 }
 
 async function get<T>(url: string, token: string): Promise<T> {
-  const response = await fetch(url, { headers: { authorization: `Bearer ${token}`, "user-agent": "babel-code-vscode" } })
+  const response = await fetch(url, {
+    headers: { authorization: `Bearer ${token}`, "user-agent": "babel-code-vscode" },
+  })
   if (!response.ok) throw new Error(`Update server returned HTTP ${response.status}`)
   return response.json() as Promise<T>
 }
 
 async function download(url: string, file: string, token: string): Promise<void> {
-  const response = await fetch(url, { headers: { authorization: `Bearer ${token}`, "user-agent": "babel-code-vscode" } })
+  const response = await fetch(url, {
+    headers: { authorization: `Bearer ${token}`, "user-agent": "babel-code-vscode" },
+  })
   if (!response.ok) throw new Error(`Update server returned HTTP ${response.status}`)
   await fsp.writeFile(file, Buffer.from(await response.arrayBuffer()))
 }

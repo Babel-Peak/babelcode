@@ -45,7 +45,7 @@ permissions:
 jobs:
   version:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode' && !startsWith(github.event.head_commit.message, 'release:') # kilocode_change
+    if: github.repository == 'Babel-Peak/babelcode' && !startsWith(github.event.head_commit.message, 'release:') # kilocode_change
     steps:
       - uses: actions/checkout@v6 # kilocode_change
         with:
@@ -86,7 +86,7 @@ jobs:
   build-cli:
     needs: version
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Babel-Peak/babelcode'
     steps:
       - uses: actions/checkout@v6 # kilocode_change
         with:
@@ -341,7 +341,7 @@ jobs:
       - validate-cli-unix
       - validate-cli-windows
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Babel-Peak/babelcode'
     steps:
       - uses: actions/checkout@v6 # kilocode_change
 
@@ -408,7 +408,7 @@ jobs:
     needs:
       - version
       - build-cli
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Babel-Peak/babelcode'
     uses: ./.github/workflows/smoke-test.yml
     with:
       cli_version: ${{ needs.version.outputs.version }}
