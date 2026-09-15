@@ -1,29 +1,24 @@
-import * as fs from "node:fs"
 import * as fsp from "node:fs/promises"
 import * as os from "node:os"
 import * as path from "node:path"
-import * as https from "node:https"
 import * as vscode from "vscode"
 
-const repo = "Kilo-Org/kilocode"
 const extension = "babelcode.babel-code"
 const asset = "kilo-vscode"
+const updateUrl = "https://code.babelpeak.com/api/extensions/stable"
 
-type Release = {
-  tag_name?: string
-  assets?: Array<{ name?: string; browser_download_url?: string }>
+type Release = { version?: string; downloadUrl?: string }
+
+export function checkForUpdate(context: vscode.ExtensionContext, token: string): void {
+  void check(context, token).catch((err) => console.warn("[Kilo New] Update check failed:", err))
 }
 
-export function checkForUpdate(context: vscode.ExtensionContext): void {
-  void check(context).catch((err) => console.warn("[Kilo New] Update check failed:", err))
-}
-
-async function check(context: vscode.ExtensionContext): Promise<void> {
+async function check(context: vscode.ExtensionContext, token: string): Promise<void> {
   const current = vscode.extensions.getExtension(extension)?.packageJSON?.version
   if (typeof current !== "string") return
 
-  const release = await get<Release>(`https://api.github.com/repos/${repo}/releases/latest`)
-  const version = release.tag_name?.replace(/^v/, "")
+  const release = await get<Release>(`${updateUrl}/latest?target=${encodeURIComponent(target())}`, token)
+  const version = release.version
   if (!version || !newer(current, version)) return
 
   const dismissed = context.globalState.get<string>("babel-code.update.dismissed")
@@ -37,15 +32,14 @@ async function check(context: vscode.ExtensionContext): Promise<void> {
   if (choice === "Ask me later") return
   if (choice !== "Update now") return
 
-  const name = `${asset}-${target()}.vsix`
-  const item = release.assets?.find((entry) => entry.name === name && entry.browser_download_url)
-  if (!item?.browser_download_url) {
+  if (!release.downloadUrl) {
     void vscode.window.showErrorMessage(`Babel Code update ${version} is not available for this platform.`)
     return
   }
 
+  const name = `${asset}-${target()}.vsix`
   const file = path.join(os.tmpdir(), name)
-  await download(item.browser_download_url, file)
+  await download(new URL(release.downloadUrl, updateUrl).toString(), file, token)
   await vscode.commands.executeCommand("workbench.extensions.installExtension", vscode.Uri.file(file))
   await fsp.rm(file, { force: true })
   const reload = await vscode.window.showInformationMessage(
@@ -73,36 +67,14 @@ function newer(current: string, next: string): boolean {
   return false
 }
 
-function get<T>(url: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const request = https.get(url, { headers: { "User-Agent": "babel-code-vscode" } }, (response) => {
-      if (response.statusCode !== 200) {
-        response.resume()
-        reject(new Error(`GitHub returned HTTP ${response.statusCode}`))
-        return
-      }
-      let body = ""
-      response.setEncoding("utf8")
-      response.on("data", (chunk) => (body += chunk))
-      response.on("end", () => resolve(JSON.parse(body) as T))
-    })
-    request.on("error", reject)
-  })
+async function get<T>(url: string, token: string): Promise<T> {
+  const response = await fetch(url, { headers: { authorization: `Bearer ${token}`, "user-agent": "babel-code-vscode" } })
+  if (!response.ok) throw new Error(`Update server returned HTTP ${response.status}`)
+  return response.json() as Promise<T>
 }
 
-function download(url: string, file: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = https.get(url, { headers: { "User-Agent": "babel-code-vscode" } }, (response) => {
-      if (response.statusCode !== 200) {
-        response.resume()
-        reject(new Error(`GitHub returned HTTP ${response.statusCode}`))
-        return
-      }
-      const output = fs.createWriteStream(file)
-      response.pipe(output)
-      output.on("finish", () => output.close(() => resolve()))
-      output.on("error", reject)
-    })
-    request.on("error", reject)
-  })
+async function download(url: string, file: string, token: string): Promise<void> {
+  const response = await fetch(url, { headers: { authorization: `Bearer ${token}`, "user-agent": "babel-code-vscode" } })
+  if (!response.ok) throw new Error(`Update server returned HTTP ${response.status}`)
+  await fsp.writeFile(file, Buffer.from(await response.arrayBuffer()))
 }

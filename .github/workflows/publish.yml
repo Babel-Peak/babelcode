@@ -381,6 +381,25 @@ jobs:
           name: kilo-vscode
           path: packages/kilo-vscode/out
 
+      - name: Publish VSIX files to Babel Code Cloud
+        run: |
+          for file in packages/kilo-vscode/out/*.vsix; do
+            target="$(basename "$file" .vsix)"
+            target="${target#kilo-vscode-}"
+            curl --fail-with-body --retry 3 \
+              -X POST "${BABELCODE_CLOUD_URL%/}/api/extensions/${BABELCODE_CLOUD_ENVIRONMENT}/upload" \
+              -H "Authorization: Bearer ${BABELCODE_CLOUD_TOKEN}" \
+              -H "Content-Type: application/octet-stream" \
+              -H "X-Extension-Version: ${KILO_VERSION}" \
+              -H "X-Extension-Target: ${target}" \
+              --data-binary "@${file}"
+          done
+        env:
+          BABELCODE_CLOUD_URL: ${{ vars.BABELCODE_CLOUD_URL || 'https://code.babelpeak.com' }}
+          BABELCODE_CLOUD_ENVIRONMENT: ${{ vars.BABELCODE_CLOUD_ENVIRONMENT || 'stable' }}
+          BABELCODE_CLOUD_TOKEN: ${{ secrets.BABELCODE_CLOUD_TOKEN }}
+          KILO_VERSION: ${{ needs.build-cli.outputs.version }}
+
   # kilocode_change start
   # Run smoke tests against CLI assets uploaded to the draft GitHub release
   # before publishing the release and package artifacts.
