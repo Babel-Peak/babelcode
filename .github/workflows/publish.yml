@@ -376,12 +376,14 @@ jobs:
         run: |
           mkdir -p packages/opencode/dist
           tar --zstd -xf /tmp/kilo-cli.tar.zst -C packages/opencode/dist
+          cp -a packages/opencode/dist /tmp/kilo-cli-dist
       # kilocode_change end
       - name: Build VSIX packages
         run: bun script/build.ts
         working-directory: ./packages/kilo-vscode
         env:
-          CLI_DIST_DIR: ../../packages/opencode/dist
+          # vscode:prepublish may rebuild the host CLI; package all targets from an immutable copy.
+          CLI_DIST_DIR: /tmp/kilo-cli-dist
           KILO_VERSION: ${{ needs.build-cli.outputs.version }}
           KILO_PRE_RELEASE: ${{ inputs.pre_release }}
           GH_REPO: ${{ github.repository }}
