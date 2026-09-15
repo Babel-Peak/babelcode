@@ -37,6 +37,19 @@
   --radius-xl: 6px;
 }
 
+/* ===== Text rendering =====
+   kilocode_change - the in-progress v2 component set (packages/ui/src/v2,
+   not yet wired into the live chat UI) already applies this; the live
+   BasicTool/Collapsible/Markdown-based tool cards never picked it up, which
+   is a big part of why small UI text reads as thin/jagged rather than
+   crisp. Matches v2's own `* { ... }` treatment exactly (see e.g.
+   basic-tool-v2.css) rather than picking new values. */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
 /* ===== Interactive cursors ===== */
 
 :where(

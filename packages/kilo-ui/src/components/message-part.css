@@ -938,7 +938,14 @@ html[data-theme="kilo-vscode"] [data-component="reasoning-part"] {
   background: var(--border-weak-base);
 }
 
-[data-component="tool-output"][data-variant="mcp"] {
+/* kilocode_change - one consistent bordered-card look for every tool's
+   output box (read/list/lsp/mcp/docgraph/...), not just the MCP fallback.
+   Before this, most tool types had no border at all (a bare background-only
+   fill, or nothing), while individually-styled ones (bash's terminal,
+   docgraph's citation cards) did -- so a transcript with several different
+   tool types back to back had no shared visual language tying "this is a
+   tool result" together, which is a big part of what reads as scattered. */
+[data-component="tool-output"] {
   padding: 8px 10px;
   border: 1px solid var(--border-weak-base);
   border-radius: var(--radius-sm);
