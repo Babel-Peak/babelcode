@@ -12,7 +12,8 @@
     },
     "@kilocode/cli#build": {
       "dependsOn": ["@kilocode/sdk#build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "env": ["KILO_VERSION", "KILO_RELEASE", "KILO_PRE_RELEASE"]
     },
     "@kilocode/cli#test": {
       "dependsOn": ["^build"],
