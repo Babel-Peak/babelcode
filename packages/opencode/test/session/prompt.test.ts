@@ -1591,7 +1591,7 @@ raceNoLLMServer.instance(
       const firstCreate = yield* Deferred.make<void>()
       processorCreateStarted.push(firstCreate)
       const first = yield* prompt.loop({ sessionID: chat.id }).pipe(Effect.forkChild)
-      yield* awaitWithTimeout(Deferred.await(firstCreate), "processor.create did not start for first turn")
+      yield* awaitWithTimeout(Deferred.await(firstCreate), "processor.create did not start for first turn", "5 seconds")
 
       yield* prompt.cancel(chat.id)
       const firstExit = yield* Fiber.await(first)
@@ -1617,7 +1617,7 @@ raceNoLLMServer.instance(
       const secondCreate = yield* Deferred.make<void>()
       processorCreateStarted.push(secondCreate)
       const second = yield* prompt.loop({ sessionID: chat.id }).pipe(Effect.forkChild)
-      yield* awaitWithTimeout(Deferred.await(secondCreate), "processor.create did not start for second turn")
+      yield* awaitWithTimeout(Deferred.await(secondCreate), "processor.create did not start for second turn", "5 seconds")
 
       yield* prompt.cancel(chat.id)
       const secondExit = yield* Fiber.await(second)
