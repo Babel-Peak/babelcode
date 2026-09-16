@@ -4,6 +4,8 @@ import type { SettingsHandler } from "../agent-manager/project/settings"
 export type AgentManagerSettingsHandler = SettingsHandler
 
 export type KiloProviderOptions = {
+  cloudSignIn?: () => void
+  checkForUpdate?: () => void
   /** Context key updated from focus events reported by this provider's webview. */
   focusContext?: string
   /** Context keys updated by Agent Manager prompt and terminal focus events. */

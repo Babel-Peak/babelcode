@@ -149,6 +149,13 @@ export async function activate(context: vscode.ExtensionContext) {
   // Create the provider with shared service
   const provider = new KiloProvider(context.extensionUri, connectionService, context, {
     focusContext: "babel-code.new.sidebarFocused",
+    cloudSignIn: () => void cloud.signIn(),
+    checkForUpdate: () => {
+      void cloud.token().then((current) => {
+        if (current) checkForUpdate(context, current)
+        else void vscode.window.showInformationMessage("Sign in to Babel Code Cloud to check for updates.")
+      })
+    },
   })
   provider.setRemoteService(remoteService)
 
@@ -402,9 +409,23 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(diffVirtualProvider)
 
   // Create standalone editor providers (open in editor area, not sidebar)
-  const settingsEditorProvider = new SettingsEditorProvider(context.extensionUri, connectionService, context, {
-    ...agentManagerProvider.settings,
-  })
+  const settingsEditorProvider = new SettingsEditorProvider(
+    context.extensionUri,
+    connectionService,
+    context,
+    {
+      ...agentManagerProvider.settings,
+    },
+    {
+      cloudSignIn: () => void cloud.signIn(),
+      checkForUpdate: () => {
+        void cloud.token().then((current) => {
+          if (current) checkForUpdate(context, current)
+          else void vscode.window.showInformationMessage("Sign in to Babel Code Cloud to check for updates.")
+        })
+      },
+    },
+  )
   settingsEditorProvider.setRemoteService(remoteService)
   const marketplacePanelProvider = new MarketplacePanelProvider(context.extensionUri, connectionService, context)
   context.subscriptions.push(settingsEditorProvider, marketplacePanelProvider)
@@ -739,6 +760,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand("babel-code.new.cloud.signIn", () => cloud.signIn()),
+    vscode.commands.registerCommand("babel-code.new.checkForUpdate", async () => {
+      const current = await cloud.token()
+      if (current) checkForUpdate(context, current)
+      else void vscode.window.showInformationMessage("Sign in to Babel Code Cloud to check for updates.")
+    }),
     vscode.commands.registerCommand("babel-code.new.reload", () => {
       provider.reload().catch((e) => console.error("[Kilo New] reload command failed:", e))
     }),

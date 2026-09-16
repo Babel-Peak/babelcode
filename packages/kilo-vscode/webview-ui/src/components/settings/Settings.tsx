@@ -13,6 +13,7 @@ import ModelsTab from "./ModelsTab"
 import ProvidersTab from "./ProvidersTab"
 import AgentBehaviourTab from "./AgentBehaviourTab"
 import AutoApproveTab from "./AutoApproveTab"
+import CloudTab from "./CloudTab"
 import BrowserTab from "./BrowserTab"
 import CheckpointsTab from "./CheckpointsTab"
 import DisplayTab from "./DisplayTab"
@@ -331,6 +332,10 @@ const Settings: Component<SettingsProps> = (props) => {
             <Icon name="checklist" />
             <span class="label">{language.t("settings.autoApprove.title")}</span>
           </Tabs.Trigger>
+          <Tabs.Trigger value="cloud" aria-label={language.t("settings.cloud.title")}>
+            <Icon name="cloud-upload" />
+            <span class="label">{language.t("settings.cloud.title")}</span>
+          </Tabs.Trigger>
           <Show when={props.agentManagerSettings}>
             <Tabs.Trigger value="agentManager" aria-label={language.t("agentManager.settings.title")}>
               <Icon name="settings-gear" />
@@ -407,6 +412,10 @@ const Settings: Component<SettingsProps> = (props) => {
         <Tabs.Content value="autoApprove">
           <h3>{language.t("settings.autoApprove.title")}</h3>
           <AutoApproveTab />
+        </Tabs.Content>
+        <Tabs.Content value="cloud">
+          <h3>{language.t("settings.cloud.title")}</h3>
+          <CloudTab />
         </Tabs.Content>
         <Show when={props.agentManagerSettings}>
           <Tabs.Content value="agentManager">

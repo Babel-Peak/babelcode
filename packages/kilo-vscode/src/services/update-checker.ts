@@ -19,6 +19,7 @@ async function check(context: vscode.ExtensionContext, token: string): Promise<v
   if (typeof current !== "string") return
 
   const release = await get<Release>(`${updateUrl}/latest?target=${encodeURIComponent(detect())}`, token)
+  if (!release) return
   const version = release.version
   if (!version || !newer(current, version)) return
 
@@ -60,10 +61,11 @@ function newer(current: string, next: string): boolean {
   return false
 }
 
-async function get<T>(url: string, token: string): Promise<T> {
+async function get<T>(url: string, token: string): Promise<T | undefined> {
   const response = await fetch(url, {
     headers: { authorization: `Bearer ${token}`, "user-agent": "babel-code-vscode" },
   })
+  if (response.status === 404) return undefined
   if (!response.ok) throw new Error(`Update server returned HTTP ${response.status}`)
   return response.json() as Promise<T>
 }

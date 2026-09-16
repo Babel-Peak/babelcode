@@ -36,6 +36,7 @@ export class SettingsEditorProvider implements vscode.Disposable {
     private readonly connectionService: KiloConnectionService,
     private readonly context: vscode.ExtensionContext,
     private readonly agentManagerSettings?: AgentManagerSettingsHandler,
+    private readonly actions: { cloudSignIn?: () => void; checkForUpdate?: () => void } = {},
   ) {}
 
   private getProjectDirectory(projectId?: string): string | null {
@@ -112,6 +113,7 @@ export class SettingsEditorProvider implements vscode.Disposable {
       projectDirectory,
       hideTopBar: true,
       agentManagerSettings: view === "settings" ? this.agentManagerSettings : undefined,
+      ...this.actions,
     })
     if (this.remoteService) {
       provider.setRemoteService(this.remoteService)
