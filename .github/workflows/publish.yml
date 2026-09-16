@@ -353,7 +353,7 @@ jobs:
       needs.build-vscode.result == 'success' &&
       needs.validate-cli-unix.result == 'success' &&
       (needs.smoke-test.result == 'success' || needs.smoke-test.result == 'skipped')
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2404 # kilocode_change
     steps:
       - uses: actions/checkout@v6 # kilocode_change
         # kilocode_change start
@@ -373,8 +373,10 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      # kilocode_change start
       - name: Setup Blacksmith Builder
         uses: useblacksmith/setup-docker-builder@v1
+      # kilocode_change end
 
       - uses: actions/setup-node@v6 # kilocode_change
         with:
