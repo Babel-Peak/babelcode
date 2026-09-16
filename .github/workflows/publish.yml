@@ -44,7 +44,7 @@ permissions:
 
 jobs:
   version:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.repository == 'Babel-Peak/babelcode' && !startsWith(github.event.head_commit.message, 'release:') # kilocode_change
     steps:
       - uses: actions/checkout@v6 # kilocode_change
@@ -85,7 +85,7 @@ jobs:
 
   build-cli:
     needs: version
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.repository == 'Babel-Peak/babelcode'
     steps:
       - uses: actions/checkout@v6 # kilocode_change
@@ -252,7 +252,7 @@ jobs:
     needs:
       - build-cli
       - validate-cli-unix
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.repository == 'Babel-Peak/babelcode'
     steps:
       - uses: actions/checkout@v6 # kilocode_change

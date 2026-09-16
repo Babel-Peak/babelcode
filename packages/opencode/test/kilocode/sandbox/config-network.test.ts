@@ -60,6 +60,7 @@ const open = testEffect(layer(false))
 const supported = process.platform === "win32" ? test.skip : test
 
 supported("allows only configured HTTP destinations through the scoped proxy", async () => {
+  if (!backendSupport().available) return
   const target = server()
   const port = target.server.port!
   const factory: ProxyFactory = (hosts) =>
