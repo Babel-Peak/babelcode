@@ -76,8 +76,6 @@ jobs:
           # kilocode_change end
           KILO_VERSION: ${{ inputs.version }}
           KILO_PRE_RELEASE: ${{ inputs.pre_release }}
-          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
-          KILO_ORG_ID: ${{ secrets.KILO_ORG_ID }}
     outputs:
       version: ${{ steps.version.outputs.version }}
       release: ${{ steps.version.outputs.release }}
@@ -358,7 +356,7 @@ jobs:
       - uses: actions/checkout@v6 # kilocode_change
         # kilocode_change start
         with:
-          persist-credentials: false
+          persist-credentials: true
         # kilocode_change end
 
       - uses: ./.github/actions/setup-bun
@@ -385,14 +383,13 @@ jobs:
       - name: Install @vscode/vsce
         run: bun install -g @vscode/vsce
 
-      - name: Setup Git Committer
-        id: committer
-        uses: ./.github/actions/setup-git-committer
-        with:
-          # kilocode_change start
-          kilo-maintainer-app-id: ${{ secrets.KILO_MAINTAINER_APP_ID }}
-          kilo-maintainer-app-secret: ${{ secrets.KILO_MAINTAINER_APP_SECRET }}
-          # kilocode_change end
+      # kilocode_change start - use the built-in GITHUB_TOKEN for the release commit
+      # instead of a dedicated GitHub App (no repo-level app secret required).
+      - name: Configure git committer
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      # kilocode_change end
 
       # kilocode_change start - download into /tmp and extract the tar.zst packed by build-cli
       - uses: actions/download-artifact@v8
@@ -411,31 +408,10 @@ jobs:
           name: kilo-vscode
           path: packages/kilo-vscode/out
 
-      - name: Cache apt packages (AUR)
-        uses: actions/cache@v5 # kilocode_change
-        with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-aur-${{ hashFiles('.github/workflows/publish.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-aur-
-
-      - name: Setup SSH for AUR
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pacman-package-manager
-          mkdir -p ~/.ssh
-          echo "${{ secrets.AUR_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          git config --global user.email "kilo-maintainer[bot]@users.noreply.github.com"
-          git config --global user.name "kilo-maintainer[bot]"
-          ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts || true
-
       - run: ./script/publish.ts
         env:
           KILO_VERSION: ${{ needs.version.outputs.version }}
           KILO_RELEASE: ${{ needs.version.outputs.release }}
           KILO_PRE_RELEASE: ${{ inputs.pre_release }}
           GH_REPO: ${{ github.repository }}
-          AUR_KEY: ${{ secrets.AUR_KEY }}
-          GITHUB_TOKEN: ${{ steps.committer.outputs.token }}
-          NPM_CONFIG_PROVENANCE: true
+          GITHUB_TOKEN: ${{ github.token }}
