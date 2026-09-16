@@ -104,6 +104,7 @@ for (const config of targets) {
   await $`vsce package ${args}`.env({
     ...process.env,
     npm_config_ignore_scripts: "true",
+    KILO_SKIP_PREPUBLISH: "1",
   })
   console.log(`  ✅ Created ${vsixPath}`)
 }

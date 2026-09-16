@@ -58,11 +58,10 @@ function compareVersion(
 }
 
 async function fetchLatest() {
-  const data: any = await fetch("https://registry.npmjs.org/@kilocode/cli/latest").then((res) => {
-    if (!res.ok) throw new Error(res.statusText)
-    return res.json()
-  })
-  return data.version as string
+  // kilocode_change start - use the fork's own version instead of the upstream
+  // npm package, so the fork's releases don't track Kilo-Org's versioning.
+  return rootPkg.version as string
+  // kilocode_change end
 }
 
 async function fetchHighest() {
