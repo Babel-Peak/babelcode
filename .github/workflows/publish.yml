@@ -252,6 +252,7 @@ jobs:
       - validate-cli-unix
     runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.repository == 'Babel-Peak/babelcode'
+    environment: production # kilocode_change
     steps:
       - uses: actions/checkout@v6 # kilocode_change
 
