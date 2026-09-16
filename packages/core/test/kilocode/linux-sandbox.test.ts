@@ -12,8 +12,8 @@ import { CurrentProxyFactory, startProxy, type ProxyFactory } from "@kilocode/sa
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 
-const linux = process.platform === "linux" ? test : test.skip
-const linuxIPv6 = process.platform === "linux" && supportsIPv6() ? test : test.skip
+const linux = process.platform === "linux" && backendSupport().available ? test : test.skip
+const linuxIPv6 = process.platform === "linux" && backendSupport().available && supportsIPv6() ? test : test.skip
 
 function profile(
   allow: ReadonlyArray<string>,
