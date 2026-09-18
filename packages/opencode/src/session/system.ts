@@ -125,8 +125,11 @@ const layer = Layer.effect(
           })
           return (yield* (yield* Reference.Service).list()).filter((reference) => reference.description !== undefined)
         }).pipe(Effect.provide(locations.get(Location.Ref.make({ directory: AbsolutePath.make(ctx.directory) }))))
+        const docgraphMcp = cfg.mcp?.docgraph
+        const docgraphConfigured = Boolean(docgraphMcp) && !("enabled" in docgraphMcp! && docgraphMcp.enabled === false)
         return [
           ...KilocodeSystemPrompt.environment({ ctx, model, editor: editorContext }),
+          KilocodeSystemPrompt.docgraphMemoryGuidance({ configured: docgraphConfigured }),
           references.length === 0
             ? undefined
             : [
