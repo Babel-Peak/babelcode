@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { contains, escapeGlob, isAbsolutePath } from "../../src/path-utils"
+import { contains, escapeGlob, isAbsolutePath, isAllowedExternalUrl } from "../../src/path-utils"
 
 describe("isAbsolutePath", () => {
   // ── Unix absolute paths ──────────────────────────────────────────────
@@ -188,6 +188,36 @@ describe("contains", () => {
   it("rejects empty inputs", () => {
     expect(contains("", "a.ts")).toBe(false)
     expect(contains("/work", "")).toBe(false)
+  })
+})
+
+describe("isAllowedExternalUrl", () => {
+  it("accepts http and https URLs", () => {
+    expect(isAllowedExternalUrl("https://example.com")).toBe(true)
+    expect(isAllowedExternalUrl("http://localhost:3000/callback")).toBe(true)
+  })
+
+  it("accepts mixed-case schemes", () => {
+    expect(isAllowedExternalUrl("HTTPS://example.com")).toBe(true)
+  })
+
+  it("rejects non-http(s) schemes", () => {
+    expect(isAllowedExternalUrl("file:///etc/passwd")).toBe(false)
+    expect(isAllowedExternalUrl("vscode://some.extension/command")).toBe(false)
+    expect(isAllowedExternalUrl("javascript:alert(1)")).toBe(false)
+    expect(isAllowedExternalUrl("data:text/html,<script>alert(1)</script>")).toBe(false)
+  })
+
+  it("rejects schemeless input", () => {
+    expect(isAllowedExternalUrl("example.com")).toBe(false)
+    expect(isAllowedExternalUrl("//example.com")).toBe(false)
+    expect(isAllowedExternalUrl("")).toBe(false)
+  })
+
+  it("rejects non-string input", () => {
+    expect(isAllowedExternalUrl(undefined)).toBe(false)
+    expect(isAllowedExternalUrl(null)).toBe(false)
+    expect(isAllowedExternalUrl(42)).toBe(false)
   })
 })
 

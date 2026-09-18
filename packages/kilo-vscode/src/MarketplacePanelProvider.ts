@@ -4,6 +4,7 @@ import type { GlobalEvent, SessionStatus } from "@kilocode/sdk/v2/client"
 import { buildWebviewHtml, getWebviewFontSize } from "./utils"
 import { watchFontSizeConfig } from "./kilo-provider/font-size"
 import { mapSSEEventToWebviewMessage } from "./kilo-provider-utils"
+import { isAllowedExternalUrl } from "./path-utils"
 import { resolvePanelProjectDirectory } from "./project-directory"
 import { seedSessionStatuses } from "./session-status"
 import { type KiloConnectionService, ServerStartupError } from "./services/cli-backend"
@@ -328,10 +329,8 @@ export class MarketplacePanelProvider implements vscode.Disposable {
   }
 
   private openExternal(raw: unknown): void {
-    if (typeof raw !== "string") return
-    const uri = vscode.Uri.parse(raw)
-    if (uri.scheme !== "http" && uri.scheme !== "https") return
-    void vscode.env.openExternal(uri)
+    if (!isAllowedExternalUrl(raw)) return
+    void vscode.env.openExternal(vscode.Uri.parse(raw))
   }
 
   private post(msg: unknown): void {
