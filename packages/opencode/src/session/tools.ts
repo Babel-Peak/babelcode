@@ -32,6 +32,8 @@ import { AgentEventsForwarder } from "@/kilocode/telemetry/agent-events-forwarde
 import { persistRuleOfTwoGate } from "@/kilocode/session/rule-of-two-gate"
 import { fillDocgraphGraphId } from "@/kilocode/mcp/docgraph-graph-id"
 import { CurrentMcpSessionID } from "@/kilocode/mcp/session-correlation"
+import { checkDocgraphStaleness, formatDocgraphStalenessWarning } from "@/kilocode/mcp/docgraph-staleness-check"
+import { context as instanceContext } from "@/project/instance-context"
 // kilocode_change end
 import { isRecord } from "@/util/record"
 import { RuntimeFlags } from "@/effect/runtime-flags"
@@ -578,6 +580,23 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
             }
           }
 
+          // kilocode_change start - warn the model when a docgraph tool result cites a
+          // local file whose live content no longer matches what's indexed (see
+          // docgraph-staleness-check.ts)
+          if (entry.clientName === "docgraph" && cfg.docgraph?.staleness_check !== false) {
+            try {
+              const stale = checkDocgraphStaleness({
+                clientName: entry.clientName,
+                worktree: instanceContext.use().worktree,
+                textParts,
+              })
+              const warning = formatDocgraphStalenessWarning(stale)
+              if (warning) textParts.unshift(warning)
+            } catch {
+              // No instance context available (e.g. outside a workspace-bound session) -- skip silently.
+            }
+          }
+          // kilocode_change end
           const truncated = yield* truncate.output(textParts.join("\n\n"), {}, input.agent)
           const metadata = {
             ...result.metadata,

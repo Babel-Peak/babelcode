@@ -223,6 +223,12 @@ export const Info = Schema.Struct({
           "supplies a graph_id matching one of these labels instead of a real graph_id, it resolves to the " +
           "matching entry before the MCP call is dispatched.",
       }),
+      staleness_check: Schema.optional(Schema.Boolean).annotate({
+        description:
+          "Whether docgraph tool results are checked against the live local file content and annotated with a " +
+          "warning when they differ (e.g. an uncommitted edit made outside this session). Defaults to true; set " +
+          "to false to disable if it ever proves noisy or slow on a given workspace.",
+      }),
     }).annotate({ description: "This workspace's docgraph graph binding" }),
   ),
   model: Schema.optional(Schema.NullOr(Schema.String)).annotate({
