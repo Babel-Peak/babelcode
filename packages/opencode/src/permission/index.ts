@@ -19,6 +19,8 @@ import { drainCovered } from "@/kilocode/permission/drain"
 import { ReadPermission } from "@/kilocode/permission/read"
 import { AgentManagerPermission } from "@/kilocode/permission/agent-manager" // kilocode_change
 import { ExternalDirectoryPermission } from "@/kilocode/permission/external-directory"
+import { RuleOfTwo } from "@/kilocode/permission/rule-of-two"
+import { AgentEventsForwarder } from "@/kilocode/telemetry/agent-events-forwarder"
 // kilocode_change end
 
 export const Event = PermissionV1.Event
@@ -80,6 +82,24 @@ export interface Interface {
   readonly saveAlwaysRules: (input: z.infer<typeof SaveAlwaysRulesInput>) => Effect.Effect<void, NotFoundError>
   readonly allowEverything: (input: z.infer<typeof AllowEverythingInput>) => Effect.Effect<void>
   readonly pending: (id: string) => Effect.Effect<Request | undefined>
+  // Rule-of-Two tracking (see kilocode/permission/rule-of-two.ts): call once per
+  // completed tool result so egress-capable permissions get hard-blocked for this
+  // session once it has touched both private (docgraph) data and flagged
+  // untrusted content. Never fails -- a scoring bug must not break tool execution.
+  // Returns the newly-added deny rules the first time a session gets gated (and
+  // undefined every other call) so the caller can persist them onto the
+  // session record itself (Session.Info.permission) -- this service's own
+  // session-scoped ruleset (`state.session`, used by ask()/resolve()) is a
+  // separate, in-memory-only store that a Task-tool-spawned subagent's
+  // deriveSubagentSessionPermission never sees, since that reads the parent
+  // Session record, not this service's internals. Permission can't depend on
+  // Session.Service to persist this itself: Session already depends on
+  // Permission, so that would be circular.
+  readonly observeToolResult: (input: {
+    sessionID: string
+    toolID: string
+    output?: string
+  }) => Effect.Effect<Ruleset | undefined>
   // kilocode_change end
 }
 
@@ -97,6 +117,8 @@ interface State {
   pending: Map<PermissionV1.ID, PendingEntry>
   approved: Rule[]
   session: Record<string, Ruleset> // kilocode_change
+  // kilocode_change - Rule-of-Two per-session flags; see observeToolResult below
+  ruleOfTwo: Record<string, { privateData: boolean; untrustedContent: boolean }>
 }
 
 export function evaluate(permission: string, pattern: string, ...rulesets: PermissionV1.Ruleset[]): PermissionV1.Rule {
@@ -169,6 +191,7 @@ const layer = Layer.effect(
           pending: new Map<PermissionV1.ID, PendingEntry>(),
           approved: [] as Rule[], // kilocode_change - upstream dropped DB-seeded approvals; Kilo persists via config.updateGlobal
           session: {} as Record<string, Ruleset>, // kilocode_change
+          ruleOfTwo: {} as Record<string, { privateData: boolean; untrustedContent: boolean }>, // kilocode_change
         }
 
         yield* Effect.addFinalizer(() =>
@@ -461,9 +484,42 @@ const layer = Layer.effect(
       const s = yield* InstanceState.get(state)
       return s.pending.get(PermissionV1.ID.make(id))?.info
     })
+
+    // kilocode_change start - Rule-of-Two (rule-of-two.ts): gate egress-capable
+    // permissions the first time a session has touched both private
+    // (docgraph) data and content flagged untrusted. Recoverable, not a
+    // permanent lockout -- allowEverything already clears s.session[sessionID].
+    const observeToolResult = Effect.fn("Permission.observeToolResult")(function* (input: {
+      sessionID: string
+      toolID: string
+      output?: string
+    }) {
+      const s = yield* InstanceState.get(state)
+      const flags = (s.ruleOfTwo[input.sessionID] ??= { privateData: false, untrustedContent: false })
+      const wasGated = flags.privateData && flags.untrustedContent
+      if (RuleOfTwo.isPrivateDataTool(input.toolID)) flags.privateData = true
+      if (RuleOfTwo.isUntrustedContent(input.output)) flags.untrustedContent = true
+      if (wasGated || !flags.privateData || !flags.untrustedContent) return undefined
+
+      const additions: Ruleset = RuleOfTwo.gatedPermissions().map((permission) => ({
+        permission,
+        pattern: "*",
+        action: "deny" as const,
+      }))
+      s.session[input.sessionID] = [...(s.session[input.sessionID] ?? []), ...additions]
+      yield* Effect.logWarning(
+        "rule-of-two: session acquired private data + untrusted content; gating egress-capable tools",
+        { sessionID: input.sessionID, permissions: additions.map((rule) => rule.permission) },
+      )
+      const cfg = yield* config.get()
+      AgentEventsForwarder.emit(cfg.docgraph_events, input.sessionID, "permission.rule_of_two_gated", {
+        permissions: additions.map((rule) => rule.permission),
+      })
+      return additions
+    })
     // kilocode_change end
 
-    return Service.of({ ask, reply, list, saveAlwaysRules, allowEverything, pending }) // kilocode_change
+    return Service.of({ ask, reply, list, saveAlwaysRules, allowEverything, pending, observeToolResult }) // kilocode_change
   }),
 )
 

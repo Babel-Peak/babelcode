@@ -162,6 +162,20 @@ export const Info = Schema.Struct({
       ),
     }).annotate({ description: "Sandbox configuration for agent tools" }),
   ),
+  docgraph_events: Schema.optional(
+    Schema.Struct({
+      url: Schema.optional(Schema.String).annotate({
+        description:
+          "Base URL of docgraph's API service (e.g. https://api.cruxible.babelpeak.com) to forward agent session observability events to",
+      }),
+      api_key: Schema.optional(Schema.String).annotate({
+        description: "X-API-Key credential (agent:events scope) for the docgraph_events endpoint",
+      }),
+    }).annotate({
+      description:
+        "Forward permission/tool-execution session events to docgraph for centralized observability. Disabled unless both url and api_key are set.",
+    }),
+  ),
   model: Schema.optional(Schema.NullOr(Schema.String)).annotate({
     description: "Model to use in the format of provider/model, eg anthropic/claude-2",
   }),

@@ -28,6 +28,8 @@ import { ModelV2 } from "@opencode-ai/core/model"
 import { Config } from "@/config/config"
 import { PermissionProvenance } from "@/kilocode/permission/provenance"
 import { McpApps } from "@/kilocode/mcp/apps"
+import { AgentEventsForwarder } from "@/kilocode/telemetry/agent-events-forwarder"
+import { persistRuleOfTwoGate } from "@/kilocode/session/rule-of-two-gate"
 // kilocode_change end
 import { isRecord } from "@/util/record"
 import { RuntimeFlags } from "@/effect/runtime-flags"
@@ -185,6 +187,19 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
             }
             // kilocode_change - mark successful targeted memory recalls for the assistant badge
             if (item.id === "kilo_memory_recall") MemoryMarker.recall({ result: output, cache: input.memoryCache }) // kilocode_change
+            // kilocode_change - Rule-of-Two: every tool result is checked, not just docgraph's,
+            // since untrusted content can also arrive via read/webfetch/other tools
+            const ruleOfTwoAdditions = yield* permission.observeToolResult({
+              sessionID: ctx.sessionID,
+              toolID: item.id,
+              output: output.output,
+            })
+            // kilocode_change - persist the gate onto the session record so a Task-tool-spawned
+            // subagent inherits it too (Phase 6); see rule-of-two-gate.ts for why this can't
+            // live inside Permission.Service itself.
+            if (ruleOfTwoAdditions) yield* persistRuleOfTwoGate(sessions, ctx.sessionID, ruleOfTwoAdditions)
+            // kilocode_change - forward to docgraph's agent_sessions observability sink (metadata only, no output body)
+            AgentEventsForwarder.emit(cfg.docgraph_events, ctx.sessionID, "tool.executed", { tool: item.id })
             yield* plugin.trigger(
               "tool.execute.after",
               { tool: item.id, sessionID: ctx.sessionID, callID: ctx.callID, args },
