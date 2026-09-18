@@ -18,6 +18,14 @@ export const TaskUsage: Component<TaskUsageProps> = (props) => {
   const language = useLanguage()
   const provider = useProvider()
   const groups = createMemo(() => groupModelUsage(props.usage?.models ?? [], provider.providers()))
+  // Phase 13: "the whole operation cost" is local provider spend (already
+  // computed below, per session/model) plus docgraph's own MCP-tool-call
+  // cost for this same session (KiloProvider merges it in as `usage.cloud`,
+  // see docgraph-cost.ts) -- combined into one number, not shown separately.
+  const localCost = createMemo(() => props.usage?.totals.cost ?? 0)
+  const cloudCost = createMemo(() => props.usage?.cloud?.totalUsd ?? 0)
+  const combinedCost = createMemo(() => localCost() + cloudCost())
+  const hasUsage = createMemo(() => Boolean(props.usage?.models.length || props.usage?.cloud))
   const money = createMemo(
     () =>
       new Intl.NumberFormat(language.locale(), {
@@ -56,11 +64,16 @@ export const TaskUsage: Component<TaskUsageProps> = (props) => {
           {number(props.tokens.output)}
         </span>
       </Show>
+      <Show when={combinedCost() > 0}>
+        <span class="task-header-tokens-value" title="Combined local + docgraph cost for this session">
+          {cost(combinedCost())}
+        </span>
+      </Show>
     </>
   )
 
   return (
-    <Show when={props.usage?.models.length} fallback={<div class="task-header-tokens">{renderSummary()}</div>}>
+    <Show when={hasUsage()} fallback={<div class="task-header-tokens">{renderSummary()}</div>}>
       <Collapsible variant="ghost" class="task-header-usage tool-collapsible" defaultOpen={props.defaultOpen}>
         <Collapsible.Trigger class="task-header-usage-trigger">
           <span class="task-header-tokens">{renderSummary()}</span>
@@ -95,6 +108,24 @@ export const TaskUsage: Component<TaskUsageProps> = (props) => {
                 </section>
               )}
             </For>
+            <Show when={props.usage?.cloud}>
+              {(cloud) => (
+                <section class="task-header-usage-provider">
+                  <h4>Cloud (docgraph)</h4>
+                  <div class="task-header-usage-model">
+                    <div class="task-header-usage-meta">Total {cost(cloud().totalUsd)}</div>
+                  </div>
+                  <For each={cloud().rows}>
+                    {(row) => (
+                      <div class="task-header-usage-model">
+                        <div class="task-header-usage-model-name">{row.purpose}</div>
+                        <div class="task-header-usage-meta">{cost(row.costUsd)}</div>
+                      </div>
+                    )}
+                  </For>
+                </section>
+              )}
+            </Show>
           </div>
         </Collapsible.Content>
       </Collapsible>
