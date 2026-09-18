@@ -17,6 +17,9 @@ import { MemoryLifecycle } from "@/kilocode/memory/turn"
 import { MemoryService } from "@kilocode/kilo-memory/effect/service"
 import { MemoryEvents } from "@/kilocode/memory/events"
 import { installMemoryRuntime } from "@/kilocode/memory/runtime"
+import { IdeMemoryForwarder } from "@/kilocode/telemetry/ide-memory-forwarder" // kilocode_change
+import { Config } from "@/config/config" // kilocode_change
+import { MCP } from "@/mcp" // kilocode_change
 import { KiloToolRegistry } from "@/kilocode/tool/registry"
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { KilocodeWatcher } from "@/kilocode/watcher"
@@ -43,6 +46,8 @@ export namespace KilocodeBootstrap {
       const provider = yield* Provider.Service
       const memory = yield* MemoryService.Service
       const watcher = yield* KilocodeWatcher.Service
+      const config = yield* Config.Service // kilocode_change
+      const mcp = yield* MCP.Service // kilocode_change
 
       const init = Effect.fn("KilocodeBootstrap.init")(function* () {
         yield* watcher.init()
@@ -55,6 +60,27 @@ export namespace KilocodeBootstrap {
         yield* bus.subscribeCallback(MemoryEvents.Updated, (evt) =>
           KiloToolRegistry.invalidateMemoryEnabled(evt.properties.directory),
         )
+        // kilocode_change start - Phase 11: forward kilo-memory's own captured
+        // decisions/corrections into docgraph as private, per-developer memory.
+        // graph_id is resolved once (one workspace per process, same assumption
+        // session/tools.ts's docgraph_id auto-fill already makes); the MCP
+        // client is looked up fresh per event since it may connect after boot.
+        const cfg = yield* config.get()
+        const boundGraphID = cfg.docgraph?.graph_id
+        if (boundGraphID) {
+          yield* bus.subscribeCallback(MemoryEvents.Updated, (evt) => {
+            void Effect.runPromise(mcp.clients())
+              .then((clients) =>
+                IdeMemoryForwarder.handle(evt.properties, {
+                  client: clients[IdeMemoryForwarder.DOCGRAPH_CLIENT_NAME],
+                  graphID: boundGraphID,
+                  dataDir: Global.Path.data,
+                }),
+              )
+              .catch((err) => log.warn("ide memory forwarder dispatch failed", { err }))
+          })
+        }
+        // kilocode_change end
         // Session export bootstrap.
         yield* Effect.gen(function* () {
           if (!SessionExport.enabled) return
@@ -102,6 +128,8 @@ export namespace KilocodeBootstrap {
       Session.defaultLayer,
       AppNodeBuilder.build(SessionSummary.node),
       AppNodeBuilder.build(Provider.node),
+      AppNodeBuilder.build(Config.node), // kilocode_change - IdeMemoryForwarder reads the workspace's docgraph.graph_id
+      AppNodeBuilder.build(MCP.node), // kilocode_change - IdeMemoryForwarder calls the docgraph MCP client directly
       MemoryService.layer,
       Bus.defaultLayer,
       KilocodeWatcher.defaultLayer,
@@ -114,7 +142,17 @@ export namespace KilocodeBootstrap {
     LayerNode.make({
       service: Service,
       layer,
-      deps: [KiloSessions.node, Session.node, SessionSummary.node, Provider.node, memory, Bus.node, watcher],
+      deps: [
+        KiloSessions.node,
+        Session.node,
+        SessionSummary.node,
+        Provider.node,
+        Config.node, // kilocode_change
+        MCP.node, // kilocode_change
+        memory,
+        Bus.node,
+        watcher,
+      ],
     }),
   )
 }
