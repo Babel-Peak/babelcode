@@ -193,6 +193,14 @@ const AboutKiloCodeTab: Component<AboutKiloCodeTabProps> = (props) => {
         <div style={{ display: "flex", "align-items": "center" }}>
           <span style={labelStyle}>{language.t("settings.aboutKiloCode.version.label")}</span>
           <span style={valueStyle}>{props.extensionVersion ?? "—"}</span>
+          <Button
+            variant="secondary"
+            size="small"
+            style={{ "margin-left": "12px" }}
+            onClick={() => open("command:babel-code.new.checkForUpdate")}
+          >
+            {language.t("settings.aboutKiloCode.checkForUpdates")}
+          </Button>
         </div>
       </div>
 

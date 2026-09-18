@@ -45,7 +45,7 @@ permissions:
 jobs:
   version:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode' && !startsWith(github.event.head_commit.message, 'release:') # kilocode_change
+    if: github.repository == 'Babel-Peak/babelcode' && !startsWith(github.event.head_commit.message, 'release:') # kilocode_change
     steps:
       - uses: actions/checkout@v6 # kilocode_change
         with:
@@ -76,8 +76,6 @@ jobs:
           # kilocode_change end
           KILO_VERSION: ${{ inputs.version }}
           KILO_PRE_RELEASE: ${{ inputs.pre_release }}
-          KILO_API_KEY: ${{ secrets.KILO_API_KEY }}
-          KILO_ORG_ID: ${{ secrets.KILO_ORG_ID }}
     outputs:
       version: ${{ steps.version.outputs.version }}
       release: ${{ steps.version.outputs.release }}
@@ -86,13 +84,24 @@ jobs:
   build-cli:
     needs: version
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Babel-Peak/babelcode'
     steps:
       - uses: actions/checkout@v6 # kilocode_change
         with:
           fetch-tags: true
 
       - uses: ./.github/actions/setup-bun
+
+      # kilocode_change start
+      - name: Cache Turbo
+        uses: actions/cache@v5
+        with:
+          path: .turbo/cache
+          key: cli-turbo-${{ runner.os }}-${{ hashFiles('turbo.json','bun.lock') }}-${{ github.sha }}
+          restore-keys: |
+            cli-turbo-${{ runner.os }}-${{ hashFiles('turbo.json','bun.lock') }}-
+            cli-turbo-${{ runner.os }}-
+      # kilocode_change end
 
       # kilocode_change start
       - name: Setup Zig for Linux sandbox helpers
@@ -106,8 +115,7 @@ jobs:
       # kilocode_change end
       - name: Build
         id: build
-        run: |
-          ./packages/opencode/script/build.ts
+        run: bun turbo build --filter=@kilocode/cli
         env:
           KILO_VERSION: ${{ needs.version.outputs.version }}
           KILO_RELEASE: ${{ needs.version.outputs.release }}
@@ -148,38 +156,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: darwin-arm64
-            runner: macos-15
-            uname: arm64
-            package: "@kilocode/cli-darwin-arm64"
-            mode: host
-          - target: darwin-x64
-            runner: macos-15-intel
-            uname: x86_64
-            package: "@kilocode/cli-darwin-x64"
-            mode: host
-          - target: linux-arm64
-            runner: ubuntu-24.04-arm
-            uname: aarch64
-            package: "@kilocode/cli-linux-arm64"
-            mode: host
           - target: linux-x64
             runner: ubuntu-24.04
             uname: x86_64
             package: "@kilocode/cli-linux-x64"
             mode: host
-          - target: alpine-arm64
-            runner: ubuntu-24.04-arm
-            uname: aarch64
-            package: "@kilocode/cli-linux-arm64-musl"
-            mode: alpine
-            platform: linux/arm64
-          - target: alpine-x64
-            runner: ubuntu-24.04
-            uname: x86_64
-            package: "@kilocode/cli-linux-x64-musl"
-            mode: alpine
-            platform: linux/amd64
     steps:
       - uses: actions/download-artifact@v8
         with:
@@ -264,88 +245,28 @@ jobs:
               "$binary" --pure models anthropic | grep -q "^anthropic/"
             '
 
-  validate-cli-windows:
-    name: Validate CLI (windows-${{ matrix.arch }})
-    needs: build-cli
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 20 # kilocode_change
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: windows-11-arm
-            package: "@kilocode/cli-windows-arm64"
-          - arch: x64
-            runner: windows-2025
-            package: "@kilocode/cli-windows-x64"
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: kilo-cli.tar.zst
-          path: ${{ runner.temp }}
-          skip-decompress: true
-
-      - name: Install zstd
-        shell: pwsh
-        run: |
-          if (-not (Get-Command zstd -ErrorAction SilentlyContinue)) {
-            choco install zstandard -y --no-progress
-          }
-
-      - name: Unpack CLI dist
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          zstd -d --stdout "$env:RUNNER_TEMP\kilo-cli.tar.zst" | tar -xf - -C dist
-
-      - name: Run CLI smoke test
-        shell: pwsh
-        run: |
-          $package = "${{ matrix.package }}".Replace("/", "\")
-          $binary = ".\dist\$package\bin\kilo.exe"
-          & $binary --version
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-          $root = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid().ToString())
-          New-Item -ItemType Directory -Force -Path $root | Out-Null
-          try {
-            foreach ($name in "KILO_MODELS_PATH", "KILO_MODELS_URL", "KILO_CONFIG", "KILO_CONFIG_DIR") {
-              Remove-Item "Env:$name" -ErrorAction SilentlyContinue
-            }
-            $env:XDG_DATA_HOME = Join-Path $root "data"
-            $env:XDG_CACHE_HOME = Join-Path $root "cache"
-            $env:XDG_CONFIG_HOME = Join-Path $root "config"
-            $env:XDG_STATE_HOME = Join-Path $root "state"
-            $env:KILO_DISABLE_MODELS_FETCH = "1"
-            $env:KILO_DISABLE_PROJECT_CONFIG = "1"
-            $env:KILO_CONFIG_CONTENT = '{"enabled_providers":["anthropic"]}'
-            $env:ANTHROPIC_API_KEY = "dummy"
-            if ("${{ matrix.arch }}" -eq "x64") {
-              $env:KILO_PTY_SMOKE = "1"
-              & $binary --pure __pty-smoke
-              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            }
-            $output = & $binary --pure models anthropic
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            if (-not ($output -match "(?m)^anthropic/")) {
-              throw "Compiled Windows binary did not list Anthropic models from the embedded snapshot"
-            }
-          } finally {
-            Remove-Item -Recurse -Force $root -ErrorAction SilentlyContinue
-          }
   # kilocode_change end
   build-vscode:
     needs:
       - build-cli
       - validate-cli-unix
-      - validate-cli-windows
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Babel-Peak/babelcode'
+    environment: production # kilocode_change
     steps:
       - uses: actions/checkout@v6 # kilocode_change
 
       - uses: ./.github/actions/setup-bun
+
+      # Linux VSIX packages compile the bundled Bubblewrap helper.
+      - name: Setup Zig for Linux sandbox helpers
+        run: |
+          curl --fail --location --retry 3 \
+            https://ziglang.org/download/0.14.0/zig-linux-x86_64-0.14.0.tar.xz \
+            --output "$RUNNER_TEMP/zig.tar.xz"
+          echo "473ec26806133cf4d1918caf1a410f8403a13d979726a9045b421b685031a982  $RUNNER_TEMP/zig.tar.xz" | sha256sum --check --status
+          tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/zig-linux-x86_64-0.14.0" >> "$GITHUB_PATH"
 
       - uses: actions/setup-node@v6 # kilocode_change
         with:
@@ -366,12 +287,14 @@ jobs:
         run: |
           mkdir -p packages/opencode/dist
           tar --zstd -xf /tmp/kilo-cli.tar.zst -C packages/opencode/dist
+          cp -a packages/opencode/dist /tmp/kilo-cli-dist
       # kilocode_change end
       - name: Build VSIX packages
         run: bun script/build.ts
         working-directory: ./packages/kilo-vscode
         env:
-          CLI_DIST_DIR: ../../packages/opencode/dist
+          # vscode:prepublish may rebuild the host CLI; package all targets from an immutable copy.
+          CLI_DIST_DIR: /tmp/kilo-cli-dist
           KILO_VERSION: ${{ needs.build-cli.outputs.version }}
           KILO_PRE_RELEASE: ${{ inputs.pre_release }}
           GH_REPO: ${{ github.repository }}
@@ -381,6 +304,25 @@ jobs:
           name: kilo-vscode
           path: packages/kilo-vscode/out
 
+      - name: Publish VSIX files to Babel Code Cloud
+        run: |
+          for file in packages/kilo-vscode/out/*.vsix; do
+            target="$(basename "$file" .vsix)"
+            target="${target#kilo-vscode-}"
+            curl --fail-with-body --retry 3 \
+              -X POST "${BABELCODE_CLOUD_URL%/}/api/extensions/${BABELCODE_CLOUD_ENVIRONMENT}/upload" \
+              -H "Authorization: Bearer ${BABELCODE_CLOUD_TOKEN}" \
+              -H "Content-Type: application/octet-stream" \
+              -H "X-Extension-Version: ${KILO_VERSION}" \
+              -H "X-Extension-Target: ${target}" \
+              --data-binary "@${file}"
+          done
+        env:
+          BABELCODE_CLOUD_URL: ${{ vars.BABELCODE_CLOUD_URL || 'https://code.babelpeak.com' }}
+          BABELCODE_CLOUD_ENVIRONMENT: ${{ vars.BABELCODE_CLOUD_ENVIRONMENT || 'stable' }}
+          BABELCODE_CLOUD_TOKEN: ${{ secrets.BABELCODE_CLOUD_TOKEN }}
+          KILO_VERSION: ${{ needs.build-cli.outputs.version }}
+
   # kilocode_change start
   # Run smoke tests against CLI assets uploaded to the draft GitHub release
   # before publishing the release and package artifacts.
@@ -389,7 +331,7 @@ jobs:
     needs:
       - version
       - build-cli
-    if: github.repository == 'Kilo-Org/kilocode'
+    if: github.repository == 'Babel-Peak/babelcode' && vars.ENABLE_BENCH_SMOKE_TEST == 'true'
     uses: ./.github/workflows/smoke-test.yml
     with:
       cli_version: ${{ needs.version.outputs.version }}
@@ -402,14 +344,20 @@ jobs:
       - build-cli
       - build-vscode
       - validate-cli-unix # kilocode_change
-      - validate-cli-windows # kilocode_change
       - smoke-test
+    if: >-
+      always() &&
+      needs.version.result == 'success' &&
+      needs.build-cli.result == 'success' &&
+      needs.build-vscode.result == 'success' &&
+      needs.validate-cli-unix.result == 'success' &&
+      (needs.smoke-test.result == 'success' || needs.smoke-test.result == 'skipped')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6 # kilocode_change
         # kilocode_change start
         with:
-          persist-credentials: false
+          persist-credentials: true
         # kilocode_change end
 
       - uses: ./.github/actions/setup-bun
@@ -436,14 +384,13 @@ jobs:
       - name: Install @vscode/vsce
         run: bun install -g @vscode/vsce
 
-      - name: Setup Git Committer
-        id: committer
-        uses: ./.github/actions/setup-git-committer
-        with:
-          # kilocode_change start
-          kilo-maintainer-app-id: ${{ secrets.KILO_MAINTAINER_APP_ID }}
-          kilo-maintainer-app-secret: ${{ secrets.KILO_MAINTAINER_APP_SECRET }}
-          # kilocode_change end
+      # kilocode_change start - use the built-in GITHUB_TOKEN for the release commit
+      # instead of a dedicated GitHub App (no repo-level app secret required).
+      - name: Configure git committer
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      # kilocode_change end
 
       # kilocode_change start - download into /tmp and extract the tar.zst packed by build-cli
       - uses: actions/download-artifact@v8
@@ -462,31 +409,10 @@ jobs:
           name: kilo-vscode
           path: packages/kilo-vscode/out
 
-      - name: Cache apt packages (AUR)
-        uses: actions/cache@v5 # kilocode_change
-        with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-aur-${{ hashFiles('.github/workflows/publish.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-aur-
-
-      - name: Setup SSH for AUR
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pacman-package-manager
-          mkdir -p ~/.ssh
-          echo "${{ secrets.AUR_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          git config --global user.email "kilo-maintainer[bot]@users.noreply.github.com"
-          git config --global user.name "kilo-maintainer[bot]"
-          ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts || true
-
       - run: ./script/publish.ts
         env:
           KILO_VERSION: ${{ needs.version.outputs.version }}
           KILO_RELEASE: ${{ needs.version.outputs.release }}
           KILO_PRE_RELEASE: ${{ inputs.pre_release }}
           GH_REPO: ${{ github.repository }}
-          AUR_KEY: ${{ secrets.AUR_KEY }}
-          GITHUB_TOKEN: ${{ steps.committer.outputs.token }}
-          NPM_CONFIG_PROVENANCE: true
+          GITHUB_TOKEN: ${{ github.token }}

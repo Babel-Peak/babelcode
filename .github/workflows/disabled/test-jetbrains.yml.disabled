@@ -16,7 +16,7 @@ env:
 jobs:
   changes:
     name: detect JetBrains changes
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     outputs:
       jetbrains: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.jetbrains }}
     steps:
@@ -43,7 +43,7 @@ jobs:
     name: jetbrains
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.jetbrains == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
@@ -104,7 +104,7 @@ jobs:
       - changes
       - unit
     if: always()
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     steps:
       - name: Verify JetBrains jobs passed
         run: |

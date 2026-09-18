@@ -1659,6 +1659,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       },
       storage: this.extensionContext?.globalStorageUri,
       post: (msg) => this.postMessage(msg),
+      cloudSignIn: this.opts.cloudSignIn,
+      checkForUpdate: this.opts.checkForUpdate,
     })
   }
 

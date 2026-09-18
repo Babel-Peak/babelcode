@@ -1,5 +1,6 @@
 import * as vscode from "vscode"
 import { checkForUpdate } from "./services/update-checker"
+import { CloudAuth } from "./services/cloud-auth"
 import { KiloProvider } from "./KiloProvider"
 import { AgentManagerProvider } from "./agent-manager/AgentManagerProvider"
 import { VscodeHost } from "./agent-manager/vscode-host"
@@ -54,7 +55,15 @@ const panelTitleHandler = (panel: vscode.WebviewPanel) => (title: string) => {
 // it starts lazily when a webview connects or when ensureBackendForAutocomplete() triggers it.
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Babel Code extension is now active")
-  checkForUpdate(context)
+  const cloud = new CloudAuth(context)
+  const token = await cloud.token()
+  if (token) checkForUpdate(context, token)
+  else
+    void vscode.window
+      .showInformationMessage("Connect Babel Code to receive authenticated updates and cloud features.", "Sign in")
+      .then((choice) => {
+        if (choice === "Sign in") void cloud.signIn()
+      })
   shuttingDown = false
 
   // Drives the "!babel-code.new.isCursor" guards on the native view/title and
@@ -140,6 +149,13 @@ export async function activate(context: vscode.ExtensionContext) {
   // Create the provider with shared service
   const provider = new KiloProvider(context.extensionUri, connectionService, context, {
     focusContext: "babel-code.new.sidebarFocused",
+    cloudSignIn: () => void cloud.signIn(),
+    checkForUpdate: () => {
+      void cloud.token().then((current) => {
+        if (current) checkForUpdate(context, current)
+        else void vscode.window.showInformationMessage("Sign in to Babel Code Cloud to check for updates.")
+      })
+    },
   })
   provider.setRemoteService(remoteService)
 
@@ -393,9 +409,23 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(diffVirtualProvider)
 
   // Create standalone editor providers (open in editor area, not sidebar)
-  const settingsEditorProvider = new SettingsEditorProvider(context.extensionUri, connectionService, context, {
-    ...agentManagerProvider.settings,
-  })
+  const settingsEditorProvider = new SettingsEditorProvider(
+    context.extensionUri,
+    connectionService,
+    context,
+    {
+      ...agentManagerProvider.settings,
+    },
+    {
+      cloudSignIn: () => void cloud.signIn(),
+      checkForUpdate: () => {
+        void cloud.token().then((current) => {
+          if (current) checkForUpdate(context, current)
+          else void vscode.window.showInformationMessage("Sign in to Babel Code Cloud to check for updates.")
+        })
+      },
+    },
+  )
   settingsEditorProvider.setRemoteService(remoteService)
   const marketplacePanelProvider = new MarketplacePanelProvider(context.extensionUri, connectionService, context)
   context.subscriptions.push(settingsEditorProvider, marketplacePanelProvider)
@@ -694,6 +724,11 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerUriHandler({
       async handleUri(uri: vscode.Uri) {
+        if (await cloud.handle(uri)) {
+          const token = await cloud.token()
+          if (token) checkForUpdate(context, token)
+          return
+        }
         const sessionMatch = uri.path.match(/^\/kilocode\/s\/([a-zA-Z0-9_-]+)$/)
         const sessionId = sessionMatch?.[1]
         if (sessionId) {
@@ -724,6 +759,12 @@ export async function activate(context: vscode.ExtensionContext) {
   registerHeapSnapshot(context, connectionService)
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("babel-code.new.cloud.signIn", () => cloud.signIn()),
+    vscode.commands.registerCommand("babel-code.new.checkForUpdate", async () => {
+      const current = await cloud.token()
+      if (current) checkForUpdate(context, current)
+      else void vscode.window.showInformationMessage("Sign in to Babel Code Cloud to check for updates.")
+    }),
     vscode.commands.registerCommand("babel-code.new.reload", () => {
       provider.reload().catch((e) => console.error("[Kilo New] reload command failed:", e))
     }),

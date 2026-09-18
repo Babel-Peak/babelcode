@@ -11,7 +11,7 @@
   "publisher": "babelcode",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kilo-Org/kilocode.git",
+    "url": "https://github.com/Babel-Peak/babelcode.git",
     "directory": "packages/kilo-vscode"
   },
   "engines": {
@@ -105,6 +105,11 @@
       ]
     },
     "commands": [
+      {
+        "command": "babel-code.new.cloud.signIn",
+        "title": "Sign in to Babel Code Cloud",
+        "category": "Babel Code"
+      },
       {
         "command": "babel-code.new.plusButtonClicked",
         "title": "New Task",
@@ -1270,7 +1275,7 @@
     "watch:cli": "bun script/watch-cli.ts",
     "package": "bun run prepare:cli-binary:compiled && bun run prepare:sdk && bun run build:check:production && bun run prepare:playwright-core",
     "prepare:playwright-core": "bun script/prepare-playwright-core.ts",
-    "vscode:prepublish": "bun run package",
+    "vscode:prepublish": "bun script/vscode-prepublish.ts",
     "build:check": "bun run --parallel check-types check-types:webview lint bundle",
     "build:check:production": "bun run --parallel check-types check-types:webview lint bundle:production",
     "bundle": "bun esbuild.js",

@@ -47,7 +47,7 @@ env:
 jobs:
   selftest:
     if: github.repository == 'Kilo-Org/kilocode'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -65,7 +65,7 @@ jobs:
 
   sync:
     if: github.repository == 'Kilo-Org/kilocode' && github.event_name != 'pull_request'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     # Budget: 4 setup/collect + 10 learn + 90 triage + 120 edit + 2 verify + 10 fix + 2 upsert = 238 min, 12-minute reserve.
     # These are ceilings, not costs: a caught-up run triages ~2 chunks and edits
     # ~1 batch and finishes in ~25 min. The old 35/50 pair was the binding

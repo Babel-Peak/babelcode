@@ -23,6 +23,18 @@ function openExternal(url: unknown): void {
   void vscode.env.openExternal(vscode.Uri.parse(url))
 }
 
+function handleCommandUrl(url: unknown, opts: { cloudSignIn?: () => void; checkForUpdate?: () => void }): boolean {
+  if (url === "command:babel-code.new.cloud.signIn") {
+    opts.cloudSignIn?.()
+    return true
+  }
+  if (url === "command:babel-code.new.checkForUpdate") {
+    opts.checkForUpdate?.()
+    return true
+  }
+  return false
+}
+
 function openDiffVirtual(provider: DiffVirtualProvider | undefined, diff: unknown, initialDiffStyle?: unknown): void {
   if (!provider || !diff) return
   const file = diff as DiffVirtualFile
@@ -83,6 +95,8 @@ export function handleEditorAction(
     openMarkdown?: (file: string, sessionID?: string) => boolean
     storage?: vscode.Uri
     post?: (msg: unknown) => void
+    cloudSignIn?: () => void
+    checkForUpdate?: () => void
   },
 ): boolean {
   if (message.type === "openFile") {
@@ -116,6 +130,7 @@ export function handleEditorAction(
     return true
   }
   if (message.type === "openExternal") {
+    if (handleCommandUrl(message.url, opts)) return true
     openExternal(message.url)
     return true
   }
