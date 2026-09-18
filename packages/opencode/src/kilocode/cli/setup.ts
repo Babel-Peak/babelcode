@@ -11,6 +11,7 @@ import {
   DaemonCommand,
   DevAliasCommand,
   DevSetupCommand,
+  DocgraphCommand,
   KiloConsoleCommand,
   ProfileCommand,
   PtySmokeCommand,
@@ -51,6 +52,7 @@ export namespace KiloCli {
       .command(DaemonCommand)
       .command(ConfigCLICommand)
       .command(WorktreeCommand)
+      .command(DocgraphCommand)
     if (process.env.KILO_PTY_SMOKE === "1") cli.command(PtySmokeCommand)
     if (InstallationBuildKind !== "release") cli.command(DevSetupCommand).command(DevAliasCommand)
     // Safe self-reference: `cli` is a typed parameter and yargs `.command()` returns the same

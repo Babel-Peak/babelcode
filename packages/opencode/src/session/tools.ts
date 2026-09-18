@@ -30,6 +30,8 @@ import { PermissionProvenance } from "@/kilocode/permission/provenance"
 import { McpApps } from "@/kilocode/mcp/apps"
 import { AgentEventsForwarder } from "@/kilocode/telemetry/agent-events-forwarder"
 import { persistRuleOfTwoGate } from "@/kilocode/session/rule-of-two-gate"
+import { fillDocgraphGraphId } from "@/kilocode/mcp/docgraph-graph-id"
+import { CurrentMcpSessionID } from "@/kilocode/mcp/session-correlation"
 // kilocode_change end
 import { isRecord } from "@/util/record"
 import { RuntimeFlags } from "@/effect/runtime-flags"
@@ -478,6 +480,13 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
     const schema = yield* Effect.promise(() => Promise.resolve(asSchema(item.inputSchema).jsonSchema))
     const transformed = ProviderTransform.schema(input.model, { ...schema, properties: schema.properties ?? {} })
     item.inputSchema = jsonSchema(transformed)
+    // kilocode_change - surface this workspace's named secondary graphs (`kilo docgraph
+    // link <id> --as <label>`) so the model can pass a label as graph_id (resolved by
+    // fillDocgraphGraphId below) instead of needing to know the raw graph UUID
+    if (entry.clientName === "docgraph" && cfg.docgraph?.graphs?.length) {
+      const labels = cfg.docgraph.graphs.map((g) => g.label).join(", ")
+      item.description = `${item.description ?? ""}\n\nOther graphs available by label for graph_id: ${labels}.`
+    }
     item.execute = (args, opts) =>
       run.promise(
         Effect.gen(function* () {
@@ -499,7 +508,20 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
             entry, // kilocode_change - retain the native entry's local/remote network authority marker
             Effect.gen(function* () {
               yield* ctx.ask({ permission: key, metadata: {}, patterns: ["*"], always: ["*"] })
-              return yield* Effect.promise(() => execute(args, opts))
+              // kilocode_change - default a docgraph tool's graph_id from this workspace's
+              // binding (`kilo docgraph link`) when the model omits it (see docgraph-graph-id.ts)
+              const filledArgs = fillDocgraphGraphId({
+                clientName: entry.clientName,
+                args,
+                boundGraphId: cfg.docgraph?.graph_id,
+                namedGraphs: cfg.docgraph?.graphs,
+                schemaProperties: transformed.properties,
+              })
+              // kilocode_change - provide the session id for session-correlation.ts's
+              // custom fetch to pick up if this tool call reaches a remote MCP server
+              return yield* Effect.promise(() =>
+                CurrentMcpSessionID.provide(ctx.sessionID, () => execute(filledArgs, opts)),
+              )
             }),
           ).pipe(
             // kilocode_change end
