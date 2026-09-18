@@ -32,10 +32,22 @@ export namespace ModelUsage {
 
   type Model = typeof Model.Type
 
+  // Phase 13: docgraph-side cost for this session (its MCP tool calls --
+  // search_knowledge, recall_memory_as_of, propose_memory, etc. -- tagged
+  // with this same session id via X-Kilo-Session-Id, see
+  // session-correlation.ts). Absent when docgraph_events isn't configured or
+  // the fetch fails; never blocks or slows down the local usage this
+  // endpoint already returns (see docgraph-cost.ts).
+  const Cloud = Schema.Struct({
+    totalUsd: Schema.Finite,
+    rows: Schema.Array(Schema.Struct({ purpose: Schema.String, costUsd: Schema.Finite })),
+  })
+
   export const Info = Schema.Struct({
     sessionIDs: Schema.Array(SessionID),
     totals: Usage,
     models: Schema.Array(Model),
+    cloud: Schema.optional(Cloud),
   })
 
   type Info = typeof Info.Type

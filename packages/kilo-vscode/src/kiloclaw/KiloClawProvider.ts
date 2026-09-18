@@ -15,6 +15,7 @@ import { homedir } from "os"
 import type { KiloConnectionService } from "../services/cli-backend"
 import type { KiloClient } from "@kilocode/sdk/v2/client"
 import { buildWebviewHtml } from "../utils"
+import { isAllowedExternalUrl } from "../path-utils"
 import { watchFontSizeConfig } from "../kilo-provider/font-size"
 import { TokenManager } from "./token-manager"
 import { KiloChatApiError, KiloChatClient } from "./kilo-chat-client"
@@ -186,10 +187,7 @@ export class KiloClawProvider implements vscode.Disposable {
         await this.init()
         return
       case "kiloclaw.openExternal": {
-        const uri = vscode.Uri.parse(msg.url)
-        if (uri.scheme === "https" || uri.scheme === "http") {
-          void vscode.env.openExternal(uri)
-        }
+        if (isAllowedExternalUrl(msg.url)) void vscode.env.openExternal(vscode.Uri.parse(msg.url))
         return
       }
       case "kiloclaw.selectConversation":

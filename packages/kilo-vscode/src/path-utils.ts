@@ -53,3 +53,19 @@ export function contains(root: string, candidate: string): boolean {
 export function escapeGlob(name: string): string {
   return name.replace(/[*?{}[\]]/g, (c) => (c === "]" ? "[]]" : `[${c}]`))
 }
+
+const EXTERNAL_URL_SCHEME = /^([a-z][a-z0-9+.-]*):/i
+
+/**
+ * Whether `url` is safe to hand to `vscode.env.openExternal()` -- restricted
+ * to http(s) so a link surfaced from untrusted content (assistant output,
+ * ingested docs) can't reach a scheme with host-level side effects
+ * (`file:`, `vscode:`, a custom URI-handler-registered scheme, etc).
+ */
+export function isAllowedExternalUrl(url: unknown): url is string {
+  if (typeof url !== "string") return false
+  const match = EXTERNAL_URL_SCHEME.exec(url)
+  if (!match) return false
+  const scheme = match[1].toLowerCase()
+  return scheme === "http" || scheme === "https"
+}

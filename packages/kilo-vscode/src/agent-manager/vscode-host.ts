@@ -15,6 +15,7 @@ import { PLATFORM, SNAPSHOT_INITIALIZATION } from "./constants"
 import { DiffVirtualProvider } from "../DiffVirtualProvider"
 import { buildWebviewHtml } from "../utils"
 import { openFileInEditor, getWorkspaceRoot } from "../review-utils"
+import { isAllowedExternalUrl } from "../path-utils"
 import { TelemetryProxy, type TelemetryEventName } from "../services/telemetry"
 import type { AutoApproveController } from "../commands/toggle-auto-approve"
 import type { RemoteStatusService } from "../services/RemoteStatusService"
@@ -318,6 +319,7 @@ export class VscodeHost implements Host {
   }
 
   openExternal(url: string): void {
+    if (!isAllowedExternalUrl(url)) return
     void vscode.env.openExternal(vscode.Uri.parse(url))
   }
 

@@ -731,6 +731,57 @@ describe("tool.task", () => {
     },
   )
 
+  // kilocode_change start - Phase 6: a Rule-of-Two-gated parent session's egress
+  // denial must reach a spawned subagent. persistRuleOfTwoGate
+  // (kilocode/session/rule-of-two-gate.ts) is what makes the gate visible here at
+  // all -- it writes onto Session.Info.permission, which deriveSubagentSessionPermission
+  // reads; Permission.Service's own internal per-session ruleset (state.session,
+  // used by ask()/resolve()) is invisible to this code path.
+  it.instance(
+    "execute propagates a Rule-of-Two-gated parent session's denies to the spawned subagent",
+    () =>
+      Effect.gen(function* () {
+        const sessions = yield* Session.Service
+        const { chat, assistant } = yield* seed()
+        yield* sessions.setPermission({
+          sessionID: chat.id,
+          permission: [
+            { permission: "bash", pattern: "*", action: "deny" },
+            { permission: "webfetch", pattern: "*", action: "deny" },
+          ],
+        })
+        const tool = yield* TaskTool
+        const def = yield* tool.init()
+
+        const result = yield* def.execute(
+          {
+            description: "look something up",
+            prompt: "check the docs",
+            subagent_type: "general",
+          },
+          {
+            sessionID: chat.id,
+            messageID: assistant.id,
+            agent: "build",
+            abort: new AbortController().signal,
+            extra: { promptOps: stubOps() },
+            messages: [],
+            metadata: () => Effect.void,
+            ask: () => Effect.void,
+          },
+        )
+
+        const child = yield* sessions.get(result.metadata.sessionId)
+        expect(child.permission).toEqual(
+          expect.arrayContaining([
+            { permission: "bash", pattern: "*", action: "deny" },
+            { permission: "webfetch", pattern: "*", action: "deny" },
+          ]),
+        )
+      }),
+  )
+  // kilocode_change end
+
   // kilocode_change start - terminal child assistant errors fail the task tool boundary
   it.instance("execute fails when child prompt returns assistant error", () =>
     Effect.gen(function* () {

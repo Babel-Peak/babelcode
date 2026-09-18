@@ -85,4 +85,25 @@ export namespace KilocodeSystemPrompt {
       }
     })
   }
+
+  // Distinct from memoryBlocks/kilo_memory_save above: this is durable, team-shared
+  // project memory in docgraph (Cruxible), not Kilo's own local per-project memory
+  // files. Standing instruction rather than a runtime "task finished" hook -- there
+  // is no reliable signal in the session loop for "this turn is the last one" to hang
+  // a hard hook off of, so this leans on the same prompted-checklist pattern the local
+  // memoryBlocks guidance above already uses for kilo_memory_save/recall.
+  export function docgraphMemoryGuidance(input: { configured: boolean }) {
+    if (!input.configured) return undefined
+    return [
+      "This project has a docgraph MCP connection (Cruxible) for durable, team-shared project memory --",
+      "separate from Kilo's own local memory tools (kilo_memory_save/kilo_memory_recall), which stay",
+      "private to this machine.",
+      "Before finishing a nontrivial task, if you learned something reusable and durable about this",
+      "codebase -- a decision, a non-obvious convention, a root cause, a fix for a recurring problem --",
+      "propose it with the docgraph_propose_memory tool so future sessions (yours and teammates') benefit.",
+      "Do not propose memory for one-off task details, secrets/credentials, or anything already documented",
+      "in the repo (README, AGENTS.md, comments). Propose each distinct fact once; do not repeat an",
+      "identical proposal within the same session.",
+    ].join("\n")
+  }
 }

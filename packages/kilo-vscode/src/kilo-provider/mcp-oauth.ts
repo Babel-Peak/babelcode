@@ -1,11 +1,17 @@
 import * as vscode from "vscode"
 import type { KiloClient, McpStatus } from "@kilocode/sdk/v2/client"
 import { getErrorMessage } from "../kilo-provider-utils"
+import { isAllowedExternalUrl } from "../path-utils"
 
 let lastMcpBrowserOpen: { url: string; at: number } | null = null
 
-/** Dedupe when several webviews receive the same `mcp.browser.open.failed` SSE. */
+/**
+ * Dedupe when several webviews receive the same `mcp.browser.open.failed` SSE.
+ * The URL originates from a configured MCP server's OAuth redirect, which is
+ * why the scheme is validated here too, not just on webview-originated opens.
+ */
 export function openMcpOAuthUrlOnce(url: string): void {
+  if (!isAllowedExternalUrl(url)) return
   const now = Date.now()
   if (lastMcpBrowserOpen && lastMcpBrowserOpen.url === url && now - lastMcpBrowserOpen.at < 4000) return
   lastMcpBrowserOpen = { url, at: now }

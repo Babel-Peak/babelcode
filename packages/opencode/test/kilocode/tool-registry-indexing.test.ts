@@ -12,6 +12,8 @@ import { KiloMemory } from "@kilocode/kilo-memory/effect"
 import { MemoryService } from "@kilocode/kilo-memory/effect/service"
 import { InstanceState } from "../../src/effect/instance-state"
 import { KiloToolRegistry } from "../../src/kilocode/tool/registry"
+import { Config } from "../../src/config/config" // kilocode_change
+import { MCP } from "../../src/mcp" // kilocode_change
 import { Provider } from "../../src/provider/provider"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
@@ -483,6 +485,10 @@ describe("kilocode tool registry indexing", () => {
     const summary = Layer.succeed(SessionSummary.Service, {} as SessionSummary.Interface)
     const provider = Layer.succeed(Provider.Service, {} as Provider.Interface)
     const watcher = Layer.succeed(KilocodeWatcher.Service, KilocodeWatcher.Service.of({ init: () => Effect.void }))
+    // kilocode_change start - stubs for IdeMemoryForwarder's Phase 11 wiring
+    const config = Layer.succeed(Config.Service, { get: () => Effect.succeed({}) } as unknown as Config.Interface)
+    const mcp = Layer.succeed(MCP.Service, {} as MCP.Interface)
+    // kilocode_change end
     const indexing = spyOn(KiloIndexing, "init").mockRejectedValue(err)
     const warn = spyOn(logger, "warn").mockImplementation(() => {})
 
@@ -490,7 +496,9 @@ describe("kilocode tool registry indexing", () => {
       await Effect.runPromise(
         KilocodeBootstrap.Service.use((svc) => svc.init()).pipe(
           Effect.provide(
-            KilocodeBootstrap.layer.pipe(Layer.provide([sessions, bus, memory, session, summary, provider, watcher])),
+            KilocodeBootstrap.layer.pipe(
+              Layer.provide([sessions, bus, memory, session, summary, provider, watcher, config, mcp]),
+            ),
           ),
           Effect.scoped,
         ),

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "snapshot": false,
+  "docgraph": {
+    "graph_id": "950af6b7-6a1e-4ee9-a28b-f07bed70e8df"
+  }
+}
