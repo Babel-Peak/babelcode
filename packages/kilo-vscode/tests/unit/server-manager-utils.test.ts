@@ -388,10 +388,12 @@ describe("server workspace helpers", () => {
     expect(resolveIndexingEnv([{ uri: { fsPath: "/repo" } }])).toEqual({})
   })
 
-  it("disables unused managed-backend services while preserving the environment", () => {
+  it("disables unused managed-backend services and removes inherited Kilo credentials", () => {
     expect(
       resolveManagedServerEnv({
         PATH: "/usr/bin",
+        KILO_API_KEY: "container-key",
+        KILO_ORG_ID: "container-org",
         KILO_DISABLE_CHANNEL_DB: "false",
         KILO_EXPERIMENTAL_DISABLE_FILEWATCHER: "false",
       }),

@@ -30,12 +30,17 @@ export function resolveIndexingEnv(folders: readonly WorkspaceFolderLike[] | und
 }
 
 export function resolveManagedServerEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  return {
+  const result: NodeJS.ProcessEnv = {
     ...env,
     KILO_DISABLE_CHANNEL_DB: "true",
     // VS Code does not consume the backend's file.watcher.updated events.
     KILO_EXPERIMENTAL_DISABLE_FILEWATCHER: "true",
   }
+  // The extension manages Kilo credentials itself. In particular, remote
+  // extension hosts must not adopt credentials injected into a dev container.
+  delete result.KILO_API_KEY
+  delete result.KILO_ORG_ID
+  return result
 }
 
 export class ServerManager {
