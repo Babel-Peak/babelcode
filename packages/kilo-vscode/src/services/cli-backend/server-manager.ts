@@ -85,7 +85,7 @@ export class ServerManager {
     console.log("[Kilo New] ServerManager: 🔐 Generated password (length):", password.length)
 
     // Verify the CLI binary exists
-    if (!fs.existsSync(cliPath)) {
+    if (path.isAbsolute(cliPath) && !fs.existsSync(cliPath)) {
       throw new Error(
         `CLI binary not found at expected path: ${cliPath}. Please ensure the CLI is built and bundled with the extension.`,
       )
@@ -241,11 +241,21 @@ export class ServerManager {
   }
 
   private getCliPath(): string {
-    // Always use the bundled binary from the extension directory
     const binName = process.platform === "win32" ? "kilo.exe" : "kilo"
     const cliPath = path.join(this.context.extensionPath, "bin", binName)
-    console.log("[Kilo New] ServerManager: 📦 Using CLI path:", cliPath)
-    return cliPath
+    if (fs.existsSync(cliPath)) {
+      console.log("[Kilo New] ServerManager: 📦 Using bundled CLI path:", cliPath)
+      return cliPath
+    }
+
+    const configured = process.env.KILO_CLI_PATH?.trim()
+    if (configured && fs.existsSync(configured)) {
+      console.warn("[Kilo New] ServerManager: bundled CLI missing; using KILO_CLI_PATH:", configured)
+      return configured
+    }
+
+    console.warn("[Kilo New] ServerManager: bundled CLI missing; using CLI from PATH:", binName)
+    return binName
   }
 
   /**

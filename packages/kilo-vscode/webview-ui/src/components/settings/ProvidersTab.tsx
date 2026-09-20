@@ -49,7 +49,7 @@ const ProvidersTab: Component = () => {
   const popularProviders = createMemo(() => {
     const connected = new Set(provider.connected())
     const disabled = new Set(config().disabled_providers ?? [])
-    const all = Object.values(provider.providers())
+    const all = Object.values(providersWithKiloFallback(provider.providers()))
     return sortProviders(
       all.filter(
         (item) =>

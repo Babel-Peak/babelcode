@@ -52,3 +52,26 @@ export function createKiloFallbackProvider() {
     models: {},
   }
 }
+
+const PROVIDER_NAMES: Record<string, string> = {
+  anthropic: "Anthropic",
+  deepseek: "DeepSeek",
+  openai: "OpenAI",
+  google: "Google",
+  openrouter: "OpenRouter",
+  vercel: "Vercel AI Gateway",
+}
+
+export function createProviderFallbacks(providers: Record<string, unknown>) {
+  return Object.fromEntries(
+    PROVIDER_PRIORITY.filter((id) => id !== KILO_PROVIDER_ID && !providers[id]).map((id) => [
+      id,
+      {
+        id,
+        name: PROVIDER_NAMES[id] ?? id,
+        source: "custom" as const,
+        models: {},
+      },
+    ]),
+  )
+}

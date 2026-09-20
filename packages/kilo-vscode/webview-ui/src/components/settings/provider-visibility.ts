@@ -1,6 +1,10 @@
 import type { ProviderAuthState } from "../../types/messages"
 import type { Provider } from "../../types/messages"
-import { KILO_PROVIDER_ID, createKiloFallbackProvider } from "../../../../src/shared/provider-model"
+import {
+  KILO_PROVIDER_ID,
+  createKiloFallbackProvider,
+  createProviderFallbacks,
+} from "../../../../src/shared/provider-model"
 
 export function visibleConnectedIds(connected: string[], authStates: Record<string, ProviderAuthState>) {
   return connected.filter((id) => id !== KILO_PROVIDER_ID || authStates[KILO_PROVIDER_ID] !== undefined)
@@ -15,6 +19,9 @@ export function disabledProviderOptions(providers: Record<string, Provider>, dis
 }
 
 export function providersWithKiloFallback(providers: Record<string, Provider>): Record<string, Provider> {
-  if (providers[KILO_PROVIDER_ID]) return providers
-  return { [KILO_PROVIDER_ID]: createKiloFallbackProvider(), ...providers }
+  return {
+    ...createProviderFallbacks(providers),
+    ...(!providers[KILO_PROVIDER_ID] ? { [KILO_PROVIDER_ID]: createKiloFallbackProvider() } : {}),
+    ...providers,
+  } as Record<string, Provider>
 }

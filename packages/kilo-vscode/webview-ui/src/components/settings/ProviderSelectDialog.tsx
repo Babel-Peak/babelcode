@@ -19,6 +19,7 @@ import {
 } from "./provider-catalog"
 import CustomProviderDialog from "./CustomProviderDialog"
 import { KILO_PROVIDER_ID } from "../../../../src/shared/provider-model"
+import { providersWithKiloFallback } from "./provider-visibility"
 
 type ProviderItem = {
   id: string
@@ -38,7 +39,7 @@ const ProviderSelectDialog = () => {
 
     const disabled = new Set(config().disabled_providers ?? [])
     const connected = new Set(provider.connected())
-    const all = Object.values(provider.providers())
+    const all = Object.values(providersWithKiloFallback(provider.providers()))
     const withKilo = all.some((item) => item.id === KILO_PROVIDER_ID) ? all : [kiloFallbackProvider(), ...all]
     const available = withKilo.filter((item) => !disabled.has(item.id) && !connected.has(item.id))
 
