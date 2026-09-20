@@ -23,6 +23,7 @@ interface ProviderContextValue {
   findModel: (selection: ModelSelection | null) => EnrichedModel | undefined
   authMethods: Accessor<Record<string, ProviderAuthMethod[]>>
   authStates: Accessor<Record<string, ProviderAuthState>>
+  devContainer: Accessor<boolean>
   isModelValid: (selection: ModelSelection | null) => boolean
 }
 
@@ -37,6 +38,7 @@ export const ProviderProvider: ParentComponent = (props) => {
   const [defaultSelection, setDefaultSelection] = createSignal<ModelSelection>(KILO_AUTO)
   const [authMethods, setAuthMethods] = createSignal<Record<string, ProviderAuthMethod[]>>({})
   const [authStates, setAuthStates] = createSignal<Record<string, ProviderAuthState>>({})
+  const [devContainer, setDevContainer] = createSignal(false)
 
   const models = createMemo<EnrichedModel[]>(() => flattenModels(providers()))
 
@@ -61,6 +63,7 @@ export const ProviderProvider: ParentComponent = (props) => {
     setDefaultSelection(message.defaultSelection)
     setAuthMethods(message.authMethods)
     setAuthStates(message.authStates)
+    setDevContainer(message.devContainer)
   })
 
   onCleanup(unsubscribe)
@@ -98,6 +101,7 @@ export const ProviderProvider: ParentComponent = (props) => {
     findModel,
     authMethods,
     authStates,
+    devContainer,
     isModelValid,
   }
 

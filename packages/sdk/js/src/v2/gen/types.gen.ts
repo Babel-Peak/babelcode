@@ -2348,6 +2348,7 @@ export type ProviderConfig = {
   options?: {
     apiKey?: string
     baseURL?: string
+    useEnv?: boolean
     enterpriseUrl?: string
     setCacheKey?: boolean
     /**
