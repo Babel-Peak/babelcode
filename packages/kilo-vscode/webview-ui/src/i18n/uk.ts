@@ -764,6 +764,11 @@ export const dict = {
   "settings.aboutKiloCode.port.label": "Порт:",
   "settings.aboutKiloCode.versionInfo": "Інформація про версію",
   "settings.aboutKiloCode.version.label": "Версія:",
+  "settings.aboutKiloCode.checkForUpdates": "Перевірити оновлення",
+  "settings.cloud.title": "Хмара",
+  "settings.cloud.description":
+    "Підключіть Babel Code Cloud, щоб отримувати оновлення та використовувати хмарні функції.",
+  "settings.cloud.signIn": "Увійти",
   "settings.aboutKiloCode.community": "Спільнота і підтримка",
   "settings.aboutKiloCode.feedback.prefix": "Якщо у вас є питання або відгуки, будь ласка, відкрийте тікет на:",
   "settings.aboutKiloCode.feedback.or": "або",

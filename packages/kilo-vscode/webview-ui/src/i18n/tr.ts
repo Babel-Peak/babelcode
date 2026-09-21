@@ -764,6 +764,10 @@ export const dict = {
   "settings.aboutKiloCode.port.label": "Port:",
   "settings.aboutKiloCode.versionInfo": "Sürüm Bilgisi",
   "settings.aboutKiloCode.version.label": "Sürüm:",
+  "settings.aboutKiloCode.checkForUpdates": "Güncellemeleri denetle",
+  "settings.cloud.title": "Bulut",
+  "settings.cloud.description": "Güncellemeleri almak ve bulut özelliklerine erişmek için Babel Code Cloud'a bağlanın.",
+  "settings.cloud.signIn": "Oturum aç",
   "settings.aboutKiloCode.community": "Topluluk ve Destek",
   "settings.aboutKiloCode.feedback.prefix":
     "Herhangi bir sorunuz veya geri bildiriminiz varsa, lütfen şu adreste bir sorun açın:",

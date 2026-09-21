@@ -1,5 +1,5 @@
 ---
-"kilo-code": minor
+"babel-code": minor
 "@opencode-ai/ui": patch
 ---
 
