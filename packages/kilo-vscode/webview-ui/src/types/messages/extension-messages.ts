@@ -508,6 +508,7 @@ export interface SpeechToTextModelsLoadedMessage {
 
 export interface ProvidersLoadedMessage {
   type: "providersLoaded"
+  devContainer: boolean
   providers: Record<string, Provider>
   connected: string[]
   defaults: Record<string, string>

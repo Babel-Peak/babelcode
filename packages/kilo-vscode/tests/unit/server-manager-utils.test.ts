@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test"
 import { parseServerPort, scanServerPort } from "../../src/services/cli-backend/server-utils"
 import {
+  resolveCliPath,
   resolveServerCwd,
   resolveIndexingEnv,
   resolveManagedServerEnv,
@@ -18,6 +19,30 @@ import {
 import * as fs from "fs/promises"
 import * as os from "os"
 import * as path from "path"
+
+describe("resolveCliPath", () => {
+  it("uses the bundled Unix binary by default", () => {
+    expect(resolveCliPath("/extension", "linux", {}, () => false)).toBe("/extension/bin/kilo")
+  })
+
+  it("uses the bundled Windows binary by default", () => {
+    expect(resolveCliPath("C:\\extension", "win32", {}, () => false)).toBe(
+      path.join("C:\\extension", "bin", "kilo.exe"),
+    )
+  })
+
+  it("honors an explicit valid override", () => {
+    expect(resolveCliPath("/extension", "linux", { KILO_CLI_PATH: "/opt/kilo" }, (file) => file === "/opt/kilo")).toBe(
+      "/opt/kilo",
+    )
+  })
+
+  it("ignores an invalid override", () => {
+    expect(resolveCliPath("/extension", "linux", { KILO_CLI_PATH: "/missing/kilo" }, () => false)).toBe(
+      "/extension/bin/kilo",
+    )
+  })
+})
 
 describe("parseServerPort", () => {
   it("parses port from standard CLI startup message", () => {
@@ -388,10 +413,12 @@ describe("server workspace helpers", () => {
     expect(resolveIndexingEnv([{ uri: { fsPath: "/repo" } }])).toEqual({})
   })
 
-  it("disables unused managed-backend services while preserving the environment", () => {
+  it("disables unused managed-backend services and removes inherited Kilo credentials", () => {
     expect(
       resolveManagedServerEnv({
         PATH: "/usr/bin",
+        KILO_API_KEY: "container-key",
+        KILO_ORG_ID: "container-org",
         KILO_DISABLE_CHANNEL_DB: "false",
         KILO_EXPERIMENTAL_DISABLE_FILEWATCHER: "false",
       }),

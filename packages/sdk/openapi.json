@@ -33658,6 +33658,9 @@
               "baseURL": {
                 "type": "string"
               },
+              "useEnv": {
+                "type": "boolean"
+              },
               "enterpriseUrl": {
                 "type": "string"
               },

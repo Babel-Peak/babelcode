@@ -85,7 +85,12 @@ const ProvidersTab: Component = () => {
   }
 
   function canDisconnect(item: Provider) {
+    if (item.id === "openrouter" && provider.devContainer()) return false
     return source(item) !== "env"
+  }
+
+  function needsOpenRouterKey(item: Provider) {
+    return item.id === "openrouter" && provider.devContainer() && source(item) === "env"
   }
 
   function isCustom(item: Provider) {
@@ -219,6 +224,11 @@ const ProvidersTab: Component = () => {
                     >
                       {language.t("settings.providers.connected.environmentDescription")}
                     </span>
+                  </Show>
+                  <Show when={needsOpenRouterKey(item)}>
+                    <Button size="large" variant="ghost" onClick={() => connectProvider(item)}>
+                      {language.t("common.connect")}
+                    </Button>
                   </Show>
                   <Show when={chatgpt(item)}>
                     <Button size="large" variant="ghost" onClick={() => connectChatGPT(item)}>

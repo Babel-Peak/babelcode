@@ -756,6 +756,11 @@ export const dict = {
   "settings.aboutKiloCode.port.label": "پورت:",
   "settings.aboutKiloCode.versionInfo": "اطلاعات نسخه",
   "settings.aboutKiloCode.version.label": "نسخه:",
+  "settings.aboutKiloCode.checkForUpdates": "بررسی به‌روزرسانی‌ها",
+  "settings.cloud.title": "ابر",
+  "settings.cloud.description":
+    "برای دریافت به‌روزرسانی‌ها و دسترسی به قابلیت‌های ابری، به Babel Code Cloud متصل شوید.",
+  "settings.cloud.signIn": "ورود",
   "settings.aboutKiloCode.community": "جامعه و پشتیبانی",
   "settings.aboutKiloCode.feedback.prefix": "اگر سؤال یا بازخوردی دارید، می‌توانید یک issue در",
   "settings.aboutKiloCode.feedback.or": "یا",

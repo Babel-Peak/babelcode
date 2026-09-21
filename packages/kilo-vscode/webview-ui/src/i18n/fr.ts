@@ -791,6 +791,11 @@ export const dict = {
   "settings.aboutKiloCode.port.label": "Port :",
   "settings.aboutKiloCode.versionInfo": "Informations de version",
   "settings.aboutKiloCode.version.label": "Version :",
+  "settings.aboutKiloCode.checkForUpdates": "Rechercher des mises à jour",
+  "settings.cloud.title": "Cloud",
+  "settings.cloud.description":
+    "Connectez Babel Code Cloud pour recevoir les mises à jour et accéder aux fonctionnalités cloud.",
+  "settings.cloud.signIn": "Se connecter",
   "settings.aboutKiloCode.community": "Communauté et support",
   "settings.aboutKiloCode.feedback.prefix":
     "Si vous avez des questions ou des commentaires, n'hésitez pas à ouvrir un ticket sur",

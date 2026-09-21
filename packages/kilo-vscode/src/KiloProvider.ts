@@ -159,6 +159,7 @@ import {
   saveCustomProvider as saveCustomProviderAction,
   resolveStoredKey,
 } from "./provider-actions"
+import { isDevContainer } from "./remote-environment"
 import type { StoredProviderKey } from "./provider-actions"
 import { AnacondaDesktopBridge } from "./anaconda-desktop/bridge"
 import { fetchOpenAIModels, FetchModelsError } from "./shared/fetch-models"
@@ -2563,6 +2564,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           const settings = vscode.workspace.getConfiguration("babel-code.new.model")
           const message = {
             type: "providersLoaded",
+            devContainer: isDevContainer(),
             providers: indexProvidersById(response.all),
             connected: response.connected,
             defaults: response.default,

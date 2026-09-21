@@ -30,12 +30,29 @@ export function resolveIndexingEnv(folders: readonly WorkspaceFolderLike[] | und
 }
 
 export function resolveManagedServerEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  return {
+  const result: NodeJS.ProcessEnv = {
     ...env,
     KILO_DISABLE_CHANNEL_DB: "true",
     // VS Code does not consume the backend's file.watcher.updated events.
     KILO_EXPERIMENTAL_DISABLE_FILEWATCHER: "true",
   }
+  // The extension manages Kilo credentials itself. In particular, remote
+  // extension hosts must not adopt credentials injected into a dev container.
+  delete result.KILO_API_KEY
+  delete result.KILO_ORG_ID
+  return result
+}
+
+export function resolveCliPath(
+  root: string,
+  platform: NodeJS.Platform,
+  env: NodeJS.ProcessEnv,
+  exists: (file: string) => boolean = fs.existsSync,
+): string {
+  const configured = env.KILO_CLI_PATH?.trim()
+  if (configured && exists(configured)) return configured
+  const name = platform === "win32" ? "kilo.exe" : "kilo"
+  return path.join(root, "bin", name)
 }
 
 export class ServerManager {
@@ -236,9 +253,7 @@ export class ServerManager {
   }
 
   private getCliPath(): string {
-    // Always use the bundled binary from the extension directory
-    const binName = process.platform === "win32" ? "kilo.exe" : "kilo"
-    const cliPath = path.join(this.context.extensionPath, "bin", binName)
+    const cliPath = resolveCliPath(this.context.extensionPath, process.platform, process.env)
     console.log("[Kilo New] ServerManager: 📦 Using CLI path:", cliPath)
     return cliPath
   }
