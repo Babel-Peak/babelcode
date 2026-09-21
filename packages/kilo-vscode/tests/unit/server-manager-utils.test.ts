@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test"
 import { parseServerPort, scanServerPort } from "../../src/services/cli-backend/server-utils"
 import {
+  resolveCliPath,
   resolveServerCwd,
   resolveIndexingEnv,
   resolveManagedServerEnv,
@@ -18,6 +19,30 @@ import {
 import * as fs from "fs/promises"
 import * as os from "os"
 import * as path from "path"
+
+describe("resolveCliPath", () => {
+  it("uses the bundled Unix binary by default", () => {
+    expect(resolveCliPath("/extension", "linux", {}, () => false)).toBe("/extension/bin/kilo")
+  })
+
+  it("uses the bundled Windows binary by default", () => {
+    expect(resolveCliPath("C:\\extension", "win32", {}, () => false)).toBe(
+      path.join("C:\\extension", "bin", "kilo.exe"),
+    )
+  })
+
+  it("honors an explicit valid override", () => {
+    expect(resolveCliPath("/extension", "linux", { KILO_CLI_PATH: "/opt/kilo" }, (file) => file === "/opt/kilo")).toBe(
+      "/opt/kilo",
+    )
+  })
+
+  it("ignores an invalid override", () => {
+    expect(resolveCliPath("/extension", "linux", { KILO_CLI_PATH: "/missing/kilo" }, () => false)).toBe(
+      "/extension/bin/kilo",
+    )
+  })
+})
 
 describe("parseServerPort", () => {
   it("parses port from standard CLI startup message", () => {

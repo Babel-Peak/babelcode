@@ -43,6 +43,18 @@ export function resolveManagedServerEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessE
   return result
 }
 
+export function resolveCliPath(
+  root: string,
+  platform: NodeJS.Platform,
+  env: NodeJS.ProcessEnv,
+  exists: (file: string) => boolean = fs.existsSync,
+): string {
+  const configured = env.KILO_CLI_PATH?.trim()
+  if (configured && exists(configured)) return configured
+  const name = platform === "win32" ? "kilo.exe" : "kilo"
+  return path.join(root, "bin", name)
+}
+
 export class ServerManager {
   private instance: ServerInstance | null = null
   private startupPromise: Promise<ServerInstance> | null = null
@@ -85,7 +97,7 @@ export class ServerManager {
     console.log("[Kilo New] ServerManager: 🔐 Generated password (length):", password.length)
 
     // Verify the CLI binary exists
-    if (path.isAbsolute(cliPath) && !fs.existsSync(cliPath)) {
+    if (!fs.existsSync(cliPath)) {
       throw new Error(
         `CLI binary not found at expected path: ${cliPath}. Please ensure the CLI is built and bundled with the extension.`,
       )
@@ -241,21 +253,9 @@ export class ServerManager {
   }
 
   private getCliPath(): string {
-    const binName = process.platform === "win32" ? "kilo.exe" : "kilo"
-    const cliPath = path.join(this.context.extensionPath, "bin", binName)
-    if (fs.existsSync(cliPath)) {
-      console.log("[Kilo New] ServerManager: 📦 Using bundled CLI path:", cliPath)
-      return cliPath
-    }
-
-    const configured = process.env.KILO_CLI_PATH?.trim()
-    if (configured && fs.existsSync(configured)) {
-      console.warn("[Kilo New] ServerManager: bundled CLI missing; using KILO_CLI_PATH:", configured)
-      return configured
-    }
-
-    console.warn("[Kilo New] ServerManager: bundled CLI missing; using CLI from PATH:", binName)
-    return binName
+    const cliPath = resolveCliPath(this.context.extensionPath, process.platform, process.env)
+    console.log("[Kilo New] ServerManager: 📦 Using CLI path:", cliPath)
+    return cliPath
   }
 
   /**

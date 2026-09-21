@@ -58,6 +58,9 @@
     "onUri"
   ],
   "main": "./dist/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
   "contributes": {
     "configurationDefaults": {
       "files.watcherExclude": {

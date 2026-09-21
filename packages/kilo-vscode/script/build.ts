@@ -97,6 +97,17 @@ for (const config of targets) {
   console.log("Adding bundled FFmpeg helper...")
   await ensureFfmpegForTarget(config.target, binDir)
 
+  const files = await $`vsce ls --no-dependencies`
+    .env({
+      ...process.env,
+      npm_config_ignore_scripts: "true",
+      KILO_SKIP_PREPUBLISH: "1",
+    })
+    .text()
+  if (!files.split(/\r?\n/).includes(`bin/${config.binary}`)) {
+    throw new Error(`VSIX file list for ${config.target} does not include bin/${config.binary}`)
+  }
+
   console.log(`  📦 Packaging .vsix for ${config.target}${prerelease ? " (pre-release)" : ""}...`)
   const vsixPath = join(outDir, `kilo-vscode-${config.target}.vsix`)
   const args = ["--no-dependencies", "--skip-license", "--target", config.target, "-o", vsixPath]

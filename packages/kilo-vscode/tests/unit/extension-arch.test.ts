@@ -201,6 +201,19 @@ describe("Extension — package.json command sync", () => {
   })
 })
 
+describe("Extension — remote installation", () => {
+  const pkg = JSON.parse(fs.readFileSync(PKG_JSON_FILE, "utf-8"))
+
+  it("runs in the workspace extension host", () => {
+    expect(pkg.extensionKind).toEqual(["workspace"])
+  })
+
+  it("packages the bundled CLI directory", () => {
+    const ignore = fs.readFileSync(path.join(ROOT, ".vscodeignore"), "utf-8")
+    expect(ignore.split(/\r?\n/)).toContain("!bin/**")
+  })
+})
+
 // ---------------------------------------------------------------------------
 // KiloProvider handler wiring — every new KiloProvider() must get
 // setContinueInWorktreeHandler() called before resolving its webview.
