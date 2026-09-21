@@ -298,10 +298,10 @@ const layer = Layer.effect(
         )
       }
 
-      // kilocode_change - inject the current session id per-request via a custom fetch
+      // kilocode_change start - inject the current session id per-request via a custom fetch
       // (see session-correlation.ts for why this can't just be a static requestInit header)
       const correlatedFetch = withMcpSessionCorrelation(fetch)
-      // kilocode_change start - send this developer's identity (resolved once per
+      // send this developer's identity (resolved once per
       // process, above) only to the docgraph MCP client -- see docgraph-user-id.ts
       const userIdHeaders = resolveDocgraphUserIdHeader({ clientName: key, identity: developerIdentity })
       const mergedHeaders = { ...(mcp.headers ?? {}), ...userIdHeaders }

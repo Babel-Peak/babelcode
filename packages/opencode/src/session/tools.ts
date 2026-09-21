@@ -191,19 +191,20 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
             }
             // kilocode_change - mark successful targeted memory recalls for the assistant badge
             if (item.id === "kilo_memory_recall") MemoryMarker.recall({ result: output, cache: input.memoryCache }) // kilocode_change
-            // kilocode_change - Rule-of-Two: every tool result is checked, not just docgraph's,
+            // kilocode_change start - Rule-of-Two: every tool result is checked, not just docgraph's,
             // since untrusted content can also arrive via read/webfetch/other tools
             const ruleOfTwoAdditions = yield* permission.observeToolResult({
               sessionID: ctx.sessionID,
               toolID: item.id,
               output: output.output,
             })
-            // kilocode_change - persist the gate onto the session record so a Task-tool-spawned
+            // persist the gate onto the session record so a Task-tool-spawned
             // subagent inherits it too (Phase 6); see rule-of-two-gate.ts for why this can't
             // live inside Permission.Service itself.
             if (ruleOfTwoAdditions) yield* persistRuleOfTwoGate(sessions, ctx.sessionID, ruleOfTwoAdditions)
-            // kilocode_change - forward to docgraph's agent_sessions observability sink (metadata only, no output body)
+            // forward to docgraph's agent_sessions observability sink (metadata only, no output body)
             AgentEventsForwarder.emit(cfg.docgraph_events, ctx.sessionID, "tool.executed", { tool: item.id })
+            // kilocode_change end
             yield* plugin.trigger(
               "tool.execute.after",
               { tool: item.id, sessionID: ctx.sessionID, callID: ctx.callID, args },
@@ -482,13 +483,14 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
     const schema = yield* Effect.promise(() => Promise.resolve(asSchema(item.inputSchema).jsonSchema))
     const transformed = ProviderTransform.schema(input.model, { ...schema, properties: schema.properties ?? {} })
     item.inputSchema = jsonSchema(transformed)
-    // kilocode_change - surface this workspace's named secondary graphs (`kilo docgraph
+    // kilocode_change start - surface this workspace's named secondary graphs (`kilo docgraph
     // link <id> --as <label>`) so the model can pass a label as graph_id (resolved by
     // fillDocgraphGraphId below) instead of needing to know the raw graph UUID
     if (entry.clientName === "docgraph" && cfg.docgraph?.graphs?.length) {
       const labels = cfg.docgraph.graphs.map((g) => g.label).join(", ")
       item.description = `${item.description ?? ""}\n\nOther graphs available by label for graph_id: ${labels}.`
     }
+    // kilocode_change end
     item.execute = (args, opts) =>
       run.promise(
         Effect.gen(function* () {
