@@ -838,7 +838,7 @@ const blocks: SDKPart[] = [
     "Search Linear docs",
     '## Linear attachments\n\nUse uploaded asset URLs to create issue attachments.\n\n```json\n{\n  "status": "ready"\n}\n```',
   ),
-  // kilocode_change start - preview the docgraph-specific renderers (message-part.tsx)
+  // Preview the docgraph-specific renderers (message-part.tsx)
   done(
     "docgraph-search",
     "docgraph_search_knowledge",
@@ -901,7 +901,6 @@ const blocks: SDKPart[] = [
     "Propose memory",
     JSON.stringify({ graph_id: "gr_9f2a", action: "NOOP", memory_id: "mem_50a2" }),
   ),
-  // kilocode_change end
   done("list", "list", { path: "/project/src" }, "List directory", "components/\nindex.ts"),
   done(
     "codesearch",

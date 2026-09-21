@@ -1234,7 +1234,7 @@ function ToolFileAccordion(props: { path: string; actions?: JSX.Element; childre
 
 // GenericTool (upstream) does not render output; this override does.
 // When hideDetails is true, render as a row (no content), otherwise as a panel with markdown output.
-// kilocode_change start - humanize namespaced MCP tool names ("docgraph_search_knowledge")
+// Humanize namespaced MCP tool names ("docgraph_search_knowledge")
 // into a "server · action" pair instead of showing the raw snake_case tool
 // name, so which MCP server ran which action is legible at a glance. Tool
 // names arrive pre-flattened as `sanitize(clientName) + "_" + sanitize(name)`
@@ -1257,14 +1257,12 @@ export function humanizeMcpAction(action: string): string {
     .trim()
     .replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1))
 }
-// kilocode_change end
 
 function McpTool(props: ToolProps) {
   const i18n = useI18n()
   const labelKeys = ["description", "query", "url", "filePath", "path", "pattern", "name"]
   const skipKeys = new Set(labelKeys)
 
-  // kilocode_change
   const parsedTool = createMemo(() => splitMcpToolName(props.tool))
 
   const subtitle = () =>
@@ -1272,9 +1270,7 @@ function McpTool(props: ToolProps) {
       .map((key) => props.input?.[key])
       .find((value): value is string => typeof value === "string" && value.length > 0)
 
-  // kilocode_change
   const displayTitle = createMemo(() => humanizeMcpAction(parsedTool().action))
-  // kilocode_change
   const displaySubtitle = createMemo(() => {
     const server = parsedTool().server
     const detail = subtitle()
@@ -3396,7 +3392,7 @@ ToolRegistry.register({
   render: ChartTool,
 })
 
-// kilocode_change start - purpose-built renderers for docgraph's two
+// Purpose-built renderers for docgraph's two
 // highest-traffic MCP tools, so their structured JSON (citations with
 // provenance; a proposed memory's action) reads as an actual result instead
 // of a fenced JSON blob. Everything else docgraph exposes still falls
@@ -3556,4 +3552,3 @@ ToolRegistry.register({
     )
   },
 })
-// kilocode_change end

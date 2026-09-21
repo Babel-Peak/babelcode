@@ -6,7 +6,7 @@
   }
 }
 
-/* kilocode_change start - every tool-call card's title/subtitle/args row
+/* Every tool-call card's title/subtitle/args row
    (bash, edit, read, mcp, docgraph, ...) inherits the upstream trigger's
    11px (--font-size-small), which the in-progress v2 basic-tool already
    moved up to 13px for the equivalent labels. Scoped to .tool-collapsible
@@ -26,7 +26,6 @@
 [data-component="collapsible"].tool-collapsible {
   margin-top: 8px;
 }
-/* kilocode_change end */
 
 /* VS Code theme: tool-collapsible arrows point RIGHT when collapsed and DOWN when expanded. */
 html[data-theme="kilo-vscode"] [data-component="collapsible"].tool-collapsible {

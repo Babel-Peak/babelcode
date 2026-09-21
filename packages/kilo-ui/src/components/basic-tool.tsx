@@ -54,7 +54,7 @@ export function BasicTool(props: BasicToolProps) {
   )
   // A <Show>, not a plain `if`: inBody() tracks the visibility toggle, which can
   // flip after mount (Settings), so the branch must stay reactive.
-  // kilocode_change start - default every tool card to the smooth JS-driven
+  // Default every tool card to the smooth JS-driven
   // height animation Base already implements (packages/ui/basic-tool.tsx's
   // `animated` prop, via the `motion` library's spring). Upstream's CSS
   // fallback path (collapsible.css's slideDown/slideUp keyframes) is
@@ -65,7 +65,6 @@ export function BasicTool(props: BasicToolProps) {
   // many tool calls render in a single burst. Individual call sites can still
   // opt out with an explicit `animated={false}`.
   const animated = () => props.animated ?? true
-  // kilocode_change end
   return (
     <Show
       when={"children" in props || inBody()}
