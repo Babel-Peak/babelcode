@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { SystemPrompt } from "../../src/session/system"
 import { environmentDetails } from "../../src/kilocode/editor-context"
+import { KilocodeSystemPrompt } from "../../src/kilocode/system-prompt"
 import { ProviderTest } from "../fake/provider"
 
 import PROMPT_ANTHROPIC from "../../src/session/prompt/anthropic.txt"
@@ -146,5 +147,18 @@ describe("environmentDetails", () => {
     const result = environmentDetails({}, new Date("2026-08-24T12:34:56.123Z"))
 
     expect(result).toContain("Message time: 2026-08-24T12:34:56Z")
+  })
+})
+
+describe("KilocodeSystemPrompt.docgraphMemoryGuidance", () => {
+  test("returns undefined when docgraph is not configured", () => {
+    expect(KilocodeSystemPrompt.docgraphMemoryGuidance({ configured: false })).toBeUndefined()
+  })
+
+  test("instructs the agent to call docgraph_propose_memory when configured", () => {
+    const result = KilocodeSystemPrompt.docgraphMemoryGuidance({ configured: true })
+    expect(result).toContain("docgraph_propose_memory")
+    expect(result).toContain("kilo_memory_save")
+    expect(result).toContain("Before finishing a nontrivial task")
   })
 })

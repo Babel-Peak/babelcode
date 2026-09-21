@@ -45,6 +45,8 @@ import * as SandboxNetwork from "@/kilocode/sandbox/network" // kilocode_change
 import { McpCatalog } from "./catalog"
 import { McpEvent } from "@opencode-ai/schema/mcp-event"
 import { McpBrowser } from "./browser"
+import { withMcpSessionCorrelation } from "@/kilocode/mcp/session-correlation" // kilocode_change
+import { resolveDocgraphUserIdHeader, resolveGitUserEmail } from "@/kilocode/mcp/docgraph-user-id" // kilocode_change
 
 const DEFAULT_TIMEOUT = 30_000
 const CLIENT_OPTIONS = {
@@ -235,6 +237,7 @@ const layer = Layer.effect(
   Effect.gen(function* () {
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner
     const auth = yield* McpAuth.Service
+    const developerIdentity = resolveGitUserEmail() // kilocode_change - resolved once per process for docgraph-user-id.ts
     const events = yield* EventV2Bridge.Service
     const browser = yield* McpBrowser.Service
 
@@ -295,19 +298,30 @@ const layer = Layer.effect(
         )
       }
 
+      // kilocode_change start - inject the current session id per-request via a custom fetch
+      // (see session-correlation.ts for why this can't just be a static requestInit header)
+      const correlatedFetch = withMcpSessionCorrelation(fetch)
+      // send this developer's identity (resolved once per
+      // process, above) only to the docgraph MCP client -- see docgraph-user-id.ts
+      const userIdHeaders = resolveDocgraphUserIdHeader({ clientName: key, identity: developerIdentity })
+      const mergedHeaders = { ...(mcp.headers ?? {}), ...userIdHeaders }
+      const requestInit = Object.keys(mergedHeaders).length > 0 ? { headers: mergedHeaders } : undefined
+      // kilocode_change end
       const transports: Array<{ name: string; transport: TransportWithAuth }> = [
         {
           name: "StreamableHTTP",
           transport: new StreamableHTTPClientTransport(url, {
             authProvider,
-            requestInit: mcp.headers ? { headers: mcp.headers } : undefined,
+            requestInit, // kilocode_change
+            fetch: correlatedFetch, // kilocode_change
           }),
         },
         {
           name: "SSE",
           transport: new SSEClientTransport(url, {
             authProvider,
-            requestInit: mcp.headers ? { headers: mcp.headers } : undefined,
+            requestInit, // kilocode_change
+            fetch: correlatedFetch, // kilocode_change
           }),
         },
       ]

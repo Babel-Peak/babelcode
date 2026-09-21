@@ -2569,6 +2569,33 @@ export type Config = {
      */
     allowed_hosts?: Array<string>
   }
+  /**
+   * Forward permission/tool-execution session events to docgraph for centralized observability. Disabled unless both url and api_key are set.
+   */
+  docgraph_events?: {
+    url?: string
+    api_key?: string
+  }
+  /**
+   * Credential for docgraph workspace-management commands (create graph, ingest, list graphs).
+   */
+  docgraph_api?: {
+    url?: string
+    api_key?: string
+  }
+  /**
+   * This workspace's docgraph graph binding
+   */
+  docgraph?: {
+    graph_id?: string
+    graphs?: Array<{
+      /**
+       * Short name used to reference this graph, e.g. "frontend"
+       */
+      label: string
+      graph_id: string
+    }>
+  }
   model?: string
   small_model?: string
   subagent_model?: string
@@ -17097,6 +17124,13 @@ export type KilocodeSessionModelUsageResponses = {
         }
       }
     }>
+    cloud?: {
+      totalUsd: number
+      rows: Array<{
+        purpose: string
+        costUsd: number
+      }>
+    }
   }
 }
 

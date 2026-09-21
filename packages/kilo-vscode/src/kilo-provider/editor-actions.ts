@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
 import { buildPreviewPath, getPreviewCommand, getPreviewDir, parseImage, trimEntries } from "../image-preview"
-import { escapeGlob, isAbsolutePath } from "../path-utils"
+import { escapeGlob, isAbsolutePath, isAllowedExternalUrl } from "../path-utils"
 import { validateFiles } from "./file-links"
 import type { DiffVirtualFile, DiffVirtualProvider } from "../DiffVirtualProvider"
 
@@ -19,7 +19,7 @@ function isMarkdownFile(file: string): boolean {
 }
 
 function openExternal(url: unknown): void {
-  if (typeof url !== "string") return
+  if (!isAllowedExternalUrl(url)) return
   void vscode.env.openExternal(vscode.Uri.parse(url))
 }
 

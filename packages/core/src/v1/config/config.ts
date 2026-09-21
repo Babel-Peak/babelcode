@@ -162,6 +162,75 @@ export const Info = Schema.Struct({
       ),
     }).annotate({ description: "Sandbox configuration for agent tools" }),
   ),
+  docgraph_events: Schema.optional(
+    Schema.Struct({
+      url: Schema.optional(Schema.String).annotate({
+        description:
+          "Base URL of docgraph's API service (e.g. https://api.cruxible.babelpeak.com) to forward agent session observability events to",
+      }),
+      api_key: Schema.optional(Schema.String).annotate({
+        description: "X-API-Key credential (agent:events scope) for the docgraph_events endpoint",
+      }),
+    }).annotate({
+      description:
+        "Forward permission/tool-execution session events to docgraph for centralized observability. Disabled unless both url and api_key are set.",
+    }),
+  ),
+  // Global config only (~/.config/kilo/kilo.jsonc), never project-local --
+  // this is a credential, not a workspace binding. Separate from
+  // docgraph_events (agent:events scope, telemetry-only): this one needs the
+  // graph:write scope to create graphs and trigger ingest from `kilo
+  // docgraph create`/`ingest`, and read access for `kilo docgraph link`'s
+  // interactive picker and `list`.
+  docgraph_api: Schema.optional(
+    Schema.Struct({
+      url: Schema.optional(Schema.String).annotate({
+        description: "Base URL of docgraph's API service (e.g. https://api.cruxible.babelpeak.com)",
+      }),
+      api_key: Schema.optional(Schema.String).annotate({
+        description:
+          "X-API-Key credential (graph:write scope, or kb:admin) used by `kilo docgraph create`/`ingest`/`link` " +
+          "(interactive picker) to call docgraph's own HTTP API directly -- distinct from docgraph_events, " +
+          "which is scoped to telemetry forwarding only.",
+      }),
+    }).annotate({
+      description: "Credential for docgraph workspace-management commands (create graph, ingest, list graphs).",
+    }),
+  ),
+  // Set in project-local config (kilo.jsonc next to the worktree root), not
+  // the global one -- this binds one workspace to one docgraph graph, so
+  // MCP tool calls stop requiring the model to guess/supply graph_id itself.
+  docgraph: Schema.optional(
+    Schema.Struct({
+      graph_id: Schema.optional(Schema.String).annotate({
+        description:
+          "The docgraph graph_id this workspace corresponds to. Set with `kilo docgraph link <graph_id>`. " +
+          "When set, MCP tool calls that take a graph_id parameter default to this value if the model omits it.",
+      }),
+      graphs: Schema.optional(
+        Schema.mutable(
+          Schema.Array(
+            Schema.Struct({
+              label: Schema.String.annotate({ description: "Short name used to reference this graph, e.g. \"frontend\"" }),
+              graph_id: Schema.String,
+            }),
+          ),
+        ),
+      ).annotate({
+        description:
+          "Additional named graph bindings for a workspace that spans more than one docgraph graph " +
+          "(e.g. a multi-root workspace). Set with `kilo docgraph link <graph_id> --as <label>`. When the model " +
+          "supplies a graph_id matching one of these labels instead of a real graph_id, it resolves to the " +
+          "matching entry before the MCP call is dispatched.",
+      }),
+      staleness_check: Schema.optional(Schema.Boolean).annotate({
+        description:
+          "Whether docgraph tool results are checked against the live local file content and annotated with a " +
+          "warning when they differ (e.g. an uncommitted edit made outside this session). Defaults to true; set " +
+          "to false to disable if it ever proves noisy or slow on a given workspace.",
+      }),
+    }).annotate({ description: "This workspace's docgraph graph binding" }),
+  ),
   model: Schema.optional(Schema.NullOr(Schema.String)).annotate({
     description: "Model to use in the format of provider/model, eg anthropic/claude-2",
   }),

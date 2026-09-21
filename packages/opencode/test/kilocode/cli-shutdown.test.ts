@@ -80,6 +80,11 @@ mock.module("@/project/instance-runtime", () => ({
     async disposeAllInstances() {
       calls.push("dispose")
     },
+    // kilocode_change - test/fixture/fixture.ts's shared afterEach calls this too;
+    // this mock.module replaces the module process-wide for bun's whole test run
+    // (no restoration), so every other file sharing the process needs it present,
+    // not just this file's own assertions.
+    async disposeDirectory() {},
   },
 }))
 

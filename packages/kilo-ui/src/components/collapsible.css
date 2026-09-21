@@ -6,6 +6,27 @@
   }
 }
 
+/* Every tool-call card's title/subtitle/args row
+   (bash, edit, read, mcp, docgraph, ...) inherits the upstream trigger's
+   11px (--font-size-small), which the in-progress v2 basic-tool already
+   moved up to 13px for the equivalent labels. Scoped to .tool-collapsible
+   (BasicTool's own class) so unrelated accordions -- file tree, sidebar --
+   keep their existing sizing. */
+[data-component="collapsible"].tool-collapsible {
+  [data-slot="collapsible-trigger"] {
+    font-size: var(--font-size-base);
+  }
+}
+
+/* Sibling tool cards otherwise stack with zero gap between them (the parts
+   list is a bare fragment, not a flex container with its own `gap`) -- in a
+   long run of back-to-back tool calls that reads as one undifferentiated
+   wall rather than a sequence of distinct steps. Matches text-part's own
+   margin-top: 8px above it. */
+[data-component="collapsible"].tool-collapsible {
+  margin-top: 8px;
+}
+
 /* VS Code theme: tool-collapsible arrows point RIGHT when collapsed and DOWN when expanded. */
 html[data-theme="kilo-vscode"] [data-component="collapsible"].tool-collapsible {
   [data-slot="collapsible-arrow-icon"] {

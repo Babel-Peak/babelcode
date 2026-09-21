@@ -838,6 +838,69 @@ const blocks: SDKPart[] = [
     "Search Linear docs",
     '## Linear attachments\n\nUse uploaded asset URLs to create issue attachments.\n\n```json\n{\n  "status": "ready"\n}\n```',
   ),
+  // Preview the docgraph-specific renderers (message-part.tsx)
+  done(
+    "docgraph-search",
+    "docgraph_search_knowledge",
+    { graph_id: "gr_9f2a", query: "propose_memory scope requirements" },
+    "Search knowledge",
+    JSON.stringify({
+      graph_id: "gr_9f2a",
+      graph_version: 14,
+      citations: [
+        {
+          document_id: "doc_1a2b",
+          title: "docgraph/api/app/mcp/tools.py",
+          score: 0.912,
+          excerpt:
+            "async def propose_memory(self, session, principal, graph_id, content, kind='semantic', confidence=0.5):\n    if principal.user_id is None:\n        raise HTTPException(status_code=403, detail='propose_memory requires an authenticated individual user (X-Kilo-User-Id)')",
+          provenance: {
+            source_filename: "app/mcp/tools.py",
+            section_path: ["MCPTools", "propose_memory"],
+            symbol: "propose_memory",
+            line_start: 370,
+            line_end: 386,
+          },
+        },
+        {
+          document_id: "doc_3c4d",
+          title: "docgraph/api/app/services/users.py",
+          score: 0.774,
+          excerpt: "Upsert-by-(tenant_id, external_id) and return the internal user id.",
+          provenance: {
+            source_filename: "app/services/users.py",
+            symbol: "resolve_user_id",
+            line_start: 20,
+            line_end: 37,
+          },
+        },
+      ],
+    }),
+  ),
+  done(
+    "docgraph-propose",
+    "docgraph_propose_memory",
+    {
+      graph_id: "gr_9f2a",
+      content: "babelcode's docgraph MCP identity now comes from git config user.email, not a Kilo cloud login.",
+      kind: "semantic",
+      confidence: 0.8,
+    },
+    "Propose memory",
+    JSON.stringify({ graph_id: "gr_9f2a", action: "ADD", memory_id: "mem_77f1" }),
+  ),
+  done(
+    "docgraph-propose-noop",
+    "docgraph_propose_memory",
+    {
+      graph_id: "gr_9f2a",
+      content: "The docgraph MCP server is configured with a shared bearer token in kilo.jsonc.",
+      kind: "semantic",
+      confidence: 0.6,
+    },
+    "Propose memory",
+    JSON.stringify({ graph_id: "gr_9f2a", action: "NOOP", memory_id: "mem_50a2" }),
+  ),
   done("list", "list", { path: "/project/src" }, "List directory", "components/\nindex.ts"),
   done(
     "codesearch",
@@ -933,6 +996,9 @@ for (const key of [
   "agent_manager:matrix-call-agent-manager",
   "lsp:matrix-call-lsp",
   "linear_search_documentation:matrix-call-mcp",
+  "docgraph_search_knowledge:matrix-call-docgraph-search",
+  "docgraph_propose_memory:matrix-call-docgraph-propose",
+  "docgraph_propose_memory:matrix-call-docgraph-propose-noop",
   "list:matrix-call-list",
   "codesearch:matrix-call-codesearch",
 ]) {

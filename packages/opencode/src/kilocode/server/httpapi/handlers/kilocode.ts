@@ -14,6 +14,7 @@ import { AgentManager } from "@/kilocode/agent-manager/service"
 import type { RequestID as NotebookRequestID } from "@/kilocode/notebook/protocol"
 import { Notebook } from "@/kilocode/notebook/service"
 import { ModelUsage } from "@/kilocode/session/model-usage"
+import { fetchDocgraphSessionCost } from "@/kilocode/session/docgraph-cost"
 import { ProviderUsage } from "@opencode-ai/core/kilocode/provider-usage"
 import { Location } from "@opencode-ai/core/location"
 import { LocationServiceMap } from "@opencode-ai/core/location-services"
@@ -228,7 +229,13 @@ export const kilocodeHandlers = HttpApiBuilder.group(InstanceHttpApi, "kilocode"
     }) {
       const usage = yield* ModelUsage.get(ctx.params.sessionID)
       if (!usage) return yield* new HttpApiError.NotFound({})
-      return usage
+      // kilocode_change - Phase 13: merge in docgraph's session cost alongside
+      // the local provider spend above, so the extension shows one combined
+      // number. Best-effort: never fails this endpoint if docgraph is
+      // unconfigured or unreachable.
+      const cfg = yield* config.get()
+      const cloud = yield* Effect.promise(() => fetchDocgraphSessionCost(cfg.docgraph_events, ctx.params.sessionID))
+      return cloud ? { ...usage, cloud } : usage
     })
 
     const backgroundJobs = Effect.fn("KilocodeHttpApi.backgroundJobs")(function* (ctx: {

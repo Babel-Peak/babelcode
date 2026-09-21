@@ -48,6 +48,12 @@ export const WorktreeCommand = lazy({
   load: async () => (await import("@/kilocode/cli/cmd/worktree")).WorktreeCommand,
 })
 
+export const DocgraphCommand = lazy({
+  command: "docgraph",
+  describe: "docgraph workspace tools",
+  load: async () => (await import("@/kilocode/cli/cmd/docgraph")).DocgraphCommand,
+})
+
 export const PtySmokeCommand = lazy({
   command: "__pty-smoke",
   describe: false,
