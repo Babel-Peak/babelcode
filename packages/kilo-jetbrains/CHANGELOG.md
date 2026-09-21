@@ -1,5 +1,17 @@
 # Changelog
 
+## 7.5.0
+
+### Minor Changes
+
+- [#13482](https://github.com/Kilo-Org/kilocode/pull/13482) [`ec94fdc`](https://github.com/Kilo-Org/kilocode/commit/ec94fdc791ea52fb1faee1ec21536fc58a2f29bf) - Stop treating a manually stopped session as a failure, and add a Retry action to failed turns. Pressing Stop now shows a short "Stopped" note instead of an error badge and attention dot. A failed turn keeps the error badge and card and can be retried in place, using the model and effort selected at that moment — so switching away from an unavailable provider and pressing Retry continues the conversation. This includes failures that never produced a reply, such as missing provider credentials.
+
+### Patch Changes
+
+- [#13440](https://github.com/Kilo-Org/kilocode/pull/13440) [`85e13e5`](https://github.com/Kilo-Org/kilocode/commit/85e13e59fcb7e9cdc4d717b50e9ef92ec3e54471) - Detect a worktree's pull request reliably in Agent Manager. Imported PRs — including PRs from forks — hand-made worktrees, and locally renamed branches now show their PR badge, the current repository row gets one too, and a freshly imported PR no longer waits out the status poll. Imported PR branches also get proper git tracking, so `git push` and `git pull` work in the new worktree.
+
+- [#13440](https://github.com/Kilo-Org/kilocode/pull/13440) [`c3066e9`](https://github.com/Kilo-Org/kilocode/commit/c3066e988b0d8a0b56289f410f0f2a8de640fe3d) - Stop the New Worktree dialog from flashing the previous tab's content when switching between New, From PR, and From Branch.
+
 ## 7.4.24
 
 ### Patch Changes

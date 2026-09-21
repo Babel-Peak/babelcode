@@ -1,5 +1,62 @@
 # kilo-code
 
+## 7.7.14
+
+### Patch Changes
+
+- [`c9dbf59`](https://github.com/Kilo-Org/kilocode/commit/c9dbf598fea3cbce51e31e38b2cf24cc41b62297) - Download the glibc extension package on Linux when the VS Code extension host omits libc information.
+
+## 7.7.13
+
+### Minor Changes
+
+- [#13512](https://github.com/Kilo-Org/kilocode/pull/13512) [`13a9673`](https://github.com/Kilo-Org/kilocode/commit/13a9673d08cfc69eebb89898861a1ee80278f226) - Reference other Agent Manager worktrees with a searchable @ picker that prioritizes recently opened worktrees. Share paths, branches, and session IDs without attaching diffs or chat history. Keep picker results in sync when clearing search.
+
+- [`d2a48d5`](https://github.com/Kilo-Org/kilocode/commit/d2a48d51261d7a60346f71dc91a66f763ccec037) - Clicking the Babel icon in the editor title bar now attaches the current file to an already-open chat (sidebar, editor tab, or active Agent Manager session) instead of opening a duplicate tab. When no chat is open, it opens the chat in a tab and attaches the file to the context. A text selection is attached as a snippet; otherwise the whole file is attached.
+
+- [`d2a48d5`](https://github.com/Kilo-Org/kilocode/commit/d2a48d51261d7a60346f71dc91a66f763ccec037) - The browser preview now runs in a real Chrome window instead of a sandboxed iframe panel. Pages keep working cookies, logins, redirects, and strict-CSP sites, and a floating picker toolbar lets you send any element on the page to chat as inline context. Each chat session gets its own browser window, and deleting a session closes its window.
+
+- [#13498](https://github.com/Kilo-Org/kilocode/pull/13498) [`46bd29d`](https://github.com/Kilo-Org/kilocode/commit/46bd29d733d69545de60a5100997512756ad61b3) - Review all committed and uncommitted Agent Manager worktree changes with `/review worktree`.
+
+- [`d2a48d5`](https://github.com/Kilo-Org/kilocode/commit/d2a48d51261d7a60346f71dc91a66f763ccec037) - Show agent modes above AI responses, add a viewport indicator line under the task timeline that follows chat scrolling with user queries highlighted in a distinct color, and add a default reasoning selector per mode in the Models settings so each mode's reasoning effort applies in chat.
+
+### Patch Changes
+
+- [#13502](https://github.com/Kilo-Org/kilocode/pull/13502) [`094ca19`](https://github.com/Kilo-Org/kilocode/commit/094ca1987e0516dcac6df47c52944b737b87d70e) - Keep Agent Manager worktree spinners active while background agents are running.
+
+- [#13499](https://github.com/Kilo-Org/kilocode/pull/13499) [`8c0a570`](https://github.com/Kilo-Org/kilocode/commit/8c0a570222fcc51e23041c63f69db7118d5f4c7b) - Place the prompt navigator on the outer sidebar edge and delay hover previews to avoid accidental popups. Keep the navigator on the right in Agent Manager and editor tabs.
+
+- [`d0b04a1`](https://github.com/Kilo-Org/kilocode/commit/d0b04a1a0fc37c4522571c6e5a40b8902dc4fb27) - Allow configuring Babel Code credentials independently from API keys injected into a dev container.
+
+- [`8e8922f`](https://github.com/Kilo-Org/kilocode/commit/8e8922f6d43250efc7140479d98f745240ab44ce) - Download the correct automatic update package on Alpine Linux.
+
+- [#13500](https://github.com/Kilo-Org/kilocode/pull/13500) [`c8df9c4`](https://github.com/Kilo-Org/kilocode/commit/c8df9c4a7dc871fcd616accbf1e917241e48f777) - Keep chat scroll position during streaming, including small upward gestures, direction changes, and scrolling over message controls.
+
+- [#13466](https://github.com/Kilo-Org/kilocode/pull/13466) [`64c75a5`](https://github.com/Kilo-Org/kilocode/commit/64c75a53ab29caf408a0fad1f8ae8c8d19565a17) - Prevent intermittent server connection failures during VS Code startup.
+
+- [#13475](https://github.com/Kilo-Org/kilocode/pull/13475) [`be2ec51`](https://github.com/Kilo-Org/kilocode/commit/be2ec51159fdbeeee852c1e25682f3b1cc46036e) - Use the Git executable configured in VS Code when creating worktrees on Windows.
+
+- [#12830](https://github.com/Kilo-Org/kilocode/pull/12830) [`bb20d34`](https://github.com/Kilo-Org/kilocode/commit/bb20d34d308af96dc0184bfd5f0cd2313f60950d) Thanks [@thomasboom](https://github.com/thomasboom)! - Open files by clicking their names in read tool headers.
+
+- [`3280a36`](https://github.com/Kilo-Org/kilocode/commit/3280a36a0343c1e78d52d11cbd786b33ef8e860d) - Allow setting an OpenRouter API key from VS Code settings when running in a Dev Container, without exposing or allowing replacement of the saved key.
+
+- [#13476](https://github.com/Kilo-Org/kilocode/pull/13476) [`45202c0`](https://github.com/Kilo-Org/kilocode/commit/45202c0764a2b8946a783f3376b2a1bad75a17ff) - Remove deleted worktree checkpoints without losing conversation history and stop showing activity for deleted sessions.
+
+- [`d2a48d5`](https://github.com/Kilo-Org/kilocode/commit/d2a48d51261d7a60346f71dc91a66f763ccec037) - Rebrand the VS Code extension as Babel Code and allow it to install alongside Kilo Code.
+
+- [`5556950`](https://github.com/Kilo-Org/kilocode/commit/5556950fd0368deb41d8839eedac3ebda8fda901) - Install and run the bundled CLI when using Babel Code in remote workspaces and Dev Containers.
+
+- [#13422](https://github.com/Kilo-Org/kilocode/pull/13422) [`83e2772`](https://github.com/Kilo-Org/kilocode/commit/83e27728e56d461d8c749ba60722836c4bcad1f6) - Recognize sessions discovered in managed Agent Manager worktrees during orchestration actions.
+
+- Updated dependencies [[`13a9673`](https://github.com/Kilo-Org/kilocode/commit/13a9673d08cfc69eebb89898861a1ee80278f226), [`f9ddb78`](https://github.com/Kilo-Org/kilocode/commit/f9ddb78b17714075ab4f5d1ccb26f2cdbcd644bf), [`34b10a6`](https://github.com/Kilo-Org/kilocode/commit/34b10a672b3048ed53477a1019f08832b522db2d)]:
+  - @opencode-ai/ui@7.5.6
+  - @kilocode/sdk@7.5.6
+  - @opencode-ai/core@7.5.6
+  - @kilocode/kilo-indexing@7.5.6
+  - @kilocode/kilo-ui@7.6.1
+  - @kilocode/plugin@7.5.6
+  - @kilocode/kilo-gateway@7.5.6
+
 ## 7.5.5
 
 ### Patch Changes

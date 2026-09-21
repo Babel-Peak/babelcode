@@ -1,5 +1,36 @@
 # @kilocode/cli
 
+## 7.7.14
+
+## 7.7.13
+
+### Minor Changes
+
+- [#13498](https://github.com/Kilo-Org/kilocode/pull/13498) [`46bd29d`](https://github.com/Kilo-Org/kilocode/commit/46bd29d733d69545de60a5100997512756ad61b3) - Review all committed and uncommitted Agent Manager worktree changes with `/review worktree`.
+
+### Patch Changes
+
+- [#13482](https://github.com/Kilo-Org/kilocode/pull/13482) [`648fa0a`](https://github.com/Kilo-Org/kilocode/commit/648fa0a6a7b33072a631c6802bdc64ee6e94cd61) - Clear a failed turn that produced no output from the conversation when the next message is sent, so an "An error occurred" placeholder no longer lingers in history. A turn that wrote text or ran a tool before failing is kept, since its record explains changes already made.
+
+- [#13484](https://github.com/Kilo-Org/kilocode/pull/13484) [`34b10a6`](https://github.com/Kilo-Org/kilocode/commit/34b10a672b3048ed53477a1019f08832b522db2d) Thanks [@WebReflection](https://github.com/WebReflection)! - Fix ReDoS vulnerabilities in glob matching by upgrading minimatch to 10.2.6.
+
+- [#13219](https://github.com/Kilo-Org/kilocode/pull/13219) [`6299896`](https://github.com/Kilo-Org/kilocode/commit/62998965e9fb0d9ed89011c62498b39801dbbb4f) Thanks [@maphew](https://github.com/maphew)! - Deduplicate the plan/ask/architect permission ruleset so denial messages and permission payloads no longer show stacked copies of the same rule block.
+
+- [#13476](https://github.com/Kilo-Org/kilocode/pull/13476) [`45202c0`](https://github.com/Kilo-Org/kilocode/commit/45202c0764a2b8946a783f3376b2a1bad75a17ff) - Remove deleted worktree checkpoints without losing conversation history and stop showing activity for deleted sessions.
+
+- [#13493](https://github.com/Kilo-Org/kilocode/pull/13493) [`bf7848c`](https://github.com/Kilo-Org/kilocode/commit/bf7848cb48cb30a5005189e10a0a4d4aeffd5aa5) Thanks [@maphew](https://github.com/maphew)! - Fix the task tool intermittently returning an empty result. Subagents that ran with memory context had a synthetic marker part appended after their answer, which was picked up as the final text part and surfaced as an empty `<task_result>` to the parent agent. The task tool now ignores synthetic, ignored, and empty text parts, and background jobs no longer let an empty run overwrite an earlier successful result, so resumed tasks keep their real output.
+
+- Updated dependencies [[`13a9673`](https://github.com/Kilo-Org/kilocode/commit/13a9673d08cfc69eebb89898861a1ee80278f226), [`f9ddb78`](https://github.com/Kilo-Org/kilocode/commit/f9ddb78b17714075ab4f5d1ccb26f2cdbcd644bf), [`34b10a6`](https://github.com/Kilo-Org/kilocode/commit/34b10a672b3048ed53477a1019f08832b522db2d)]:
+  - @opencode-ai/ui@7.5.6
+  - @kilocode/sdk@7.5.6
+  - @kilocode/kilo-indexing@7.5.6
+  - @opencode-ai/tui@7.5.6
+  - @kilocode/plugin@7.5.6
+  - @opencode-ai/server@7.5.6
+  - @kilocode/kilo-gateway@7.5.6
+  - @kilocode/plugin-atomic-chat@7.5.6
+  - @kilocode/kilo-telemetry@7.5.6
+
 ## 7.5.5
 
 ### Patch Changes
