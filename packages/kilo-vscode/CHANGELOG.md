@@ -1,5 +1,11 @@
 # kilo-code
 
+## 7.7.14
+
+### Patch Changes
+
+- [`c9dbf59`](https://github.com/Kilo-Org/kilocode/commit/c9dbf598fea3cbce51e31e38b2cf24cc41b62297) - Download the glibc extension package on Linux when the VS Code extension host omits libc information.
+
 ## 7.7.13
 
 ### Minor Changes
