@@ -2595,6 +2595,7 @@ export type Config = {
       label: string
       graph_id: string
     }>
+    staleness_check?: boolean
   }
   model?: string
   small_model?: string
