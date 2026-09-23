@@ -1,5 +1,11 @@
 # kilo-code
 
+## 7.7.16
+
+### Minor Changes
+
+- [`d621a73`](https://github.com/Kilo-Org/kilocode/commit/d621a73f215deb1dced93f43daed06db0c88b27f) - Add mobile emulation and let users describe changes to selected browser elements before attaching them to chat.
+
 ## 7.7.14
 
 ### Patch Changes
