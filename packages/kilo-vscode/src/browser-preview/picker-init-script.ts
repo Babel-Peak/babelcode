@@ -6,7 +6,7 @@
  * element under the cursor. A picked element is handed to the extension host
  * through the page bridge exposed by PlaywrightBrowserService:
  *
- *   window.__kiloPickElement(payload)  - the picked element
+ *   window.__kiloPickElement(payload)  - the picked element and optional change request
  *   window.__kiloPickerState(active)   - pick-mode toggles (best effort)
  *   window.__kiloScreenshotArea(rect)  - drag-selected page area, document coords
  *
@@ -26,10 +26,14 @@ export const PICKER_INIT_SCRIPT = `(() => {
   var PICK = "__kiloPickElement"
   var STATE = "__kiloPickerState"
   var SCREEN = "__kiloScreenshotArea"
+  var MOBILE = "__kiloMobileMode"
 
   var active = false
+  var mobile = false
   var overlay = null
   var host = null
+  var picked = null
+  var selected = null
 
   // Curated computed-style properties useful for UI work. Keeps the attached
   // context compact instead of dumping all ~300 computed properties.
@@ -62,8 +66,8 @@ export const PICKER_INIT_SCRIPT = `(() => {
       innerText: (el.innerText || "").slice(0, 2000),
       computedStyle: computed,
       dimensions: {
-        top: Math.round(rect.top + window.scrollY),
-        left: Math.round(rect.left + window.scrollX),
+        top: Math.round(rect.top),
+        left: Math.round(rect.left),
         width: Math.round(rect.width),
         height: Math.round(rect.height)
       }
@@ -126,6 +130,17 @@ export const PICKER_INIT_SCRIPT = `(() => {
     o.style.height = rect.height + "px"
   }
 
+  function positionCompose() {
+    if (!selected || !host) return
+    var rect = selected.getBoundingClientRect()
+    var form = host.shadowRoot.getElementById("compose")
+    highlight(selected)
+    var top = rect.bottom + 8
+    if (top + form.offsetHeight > window.innerHeight - 8) top = rect.top - form.offsetHeight - 8
+    form.style.top = Math.max(8, Math.min(top, window.innerHeight - form.offsetHeight - 8)) + "px"
+    form.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - form.offsetWidth - 8)) + "px"
+  }
+
   function fromToolbar(e) {
     return e.target === host || (e.composedPath && e.composedPath().indexOf(host) !== -1)
   }
@@ -144,9 +159,15 @@ export const PICKER_INIT_SCRIPT = `(() => {
     e.stopPropagation()
     var el = e.target
     if (el && el.nodeType === 1) {
-      var payload = describe(el)
+      picked = describe(el)
+      selected = el
       setMode(false)
-      bridge(PICK, payload)
+      var form = host.shadowRoot.getElementById("compose")
+      form.classList.remove("hidden")
+      positionCompose()
+      var input = host.shadowRoot.getElementById("change")
+      input.value = ""
+      input.focus()
     }
   }
 
@@ -186,6 +207,12 @@ export const PICKER_INIT_SCRIPT = `(() => {
     }
     var shot = host.shadowRoot.getElementById("shot")
     if (shot) shot.classList.toggle("active", selecting)
+    var view = host.shadowRoot.getElementById("view")
+    if (view) {
+      view.classList.toggle("active", mobile)
+      view.setAttribute("aria-pressed", String(mobile))
+      view.title = mobile ? "Switch to desktop" : "Emulate iPhone 13"
+    }
   }
 
   // --- area selection (drag a rectangle; the host captures the screenshot) ---
@@ -290,7 +317,10 @@ export const PICKER_INIT_SCRIPT = `(() => {
   window.__kiloSetPickerChrome = function (visible) {
     if (host) host.style.display = visible ? "" : "none"
   }
-
+  window.__kiloSetMobileMode = function (enabled) {
+    mobile = !!enabled
+    syncBar()
+  }
   var CSS = [
     ":host { all: initial; position: fixed; z-index: 2147483647; bottom: 18px; right: 18px;",
     "  font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }",
@@ -306,9 +336,20 @@ export const PICKER_INIT_SCRIPT = `(() => {
     ".pick:hover { background: #1177bb; }",
     ".pick.active { background: #c43838; }",
     ".shot { background: transparent; color: #cccccc; padding: 4px 9px; }",
-    ".shot:hover, .shot.active { background: #333333; color: #4fc3f7; }",
+    ".shot:hover, .shot.active, .view:hover, .view.active { background: #333333; color: #4fc3f7; }",
+    ".view { background: transparent; color: #cccccc; padding: 3px 7px; display: inline-flex; align-items: center; }",
     ".min { background: transparent; color: #9d9d9d; padding: 4px 7px; }",
     ".min:hover { background: #333333; color: #ffffff; }",
+    ".compose { position: fixed; width: 260px; padding: 10px; background: #1f1f1f; color: #cccccc;",
+    "  border: 1px solid #3c3c3c; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.35);",
+    "  font: 12px/1.4 -apple-system, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box; }",
+    ".compose label { display: block; margin-bottom: 6px; }",
+    ".compose textarea { display: block; width: 100%; min-height: 70px; resize: vertical; box-sizing: border-box;",
+    "  padding: 6px; background: #2b2b2b; color: #ffffff; border: 1px solid #555; border-radius: 4px; font: inherit; }",
+    ".compose textarea:focus { outline: 1px solid #4fc3f7; }",
+    ".compose .actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }",
+    ".compose .attach { background: #0e639c; color: #ffffff; }",
+    ".compose .cancel { background: transparent; color: #cccccc; }",
     ".chip { background: #1f1f1f; color: #4fc3f7; border: 1px solid #3c3c3c; border-radius: 50%;",
     "  width: 26px; height: 26px; padding: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.35);",
     "  pointer-events: auto; font-size: 13px; }",
@@ -331,8 +372,20 @@ export const PICKER_INIT_SCRIPT = `(() => {
       '<span class="logo">\\u25C6</span>' +
       '<button class="pick" id="pick">Pick element</button>' +
       '<button class="shot" id="shot" title="Drag an area to attach it to chat">Screenshot</button>' +
+      '<button class="view" id="view" title="Emulate iPhone 13" aria-label="Toggle mobile emulation" aria-pressed="false">' +
+      '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
+      '<rect x="4" y="1.5" width="8" height="13" rx="1.5"/><path d="M7 12.5h2"/></svg></button>' +
       '<button class="min" id="min" title="Minimize">\\u2013</button>'
     root.appendChild(bar)
+
+    var form = document.createElement("div")
+    form.id = "compose"
+    form.className = "compose hidden"
+    form.innerHTML = '<label for="change">What should change in this element?</label>' +
+      '<textarea id="change" placeholder="Describe the change for chat"></textarea>' +
+      '<div class="actions"><button class="cancel" id="cancel">Cancel</button>' +
+      '<button class="attach" id="attach">Add to chat</button></div>'
+    root.appendChild(form)
 
     var chip = document.createElement("button")
     chip.className = "chip hidden"
@@ -348,7 +401,7 @@ export const PICKER_INIT_SCRIPT = `(() => {
     var dy = 0
 
     bar.addEventListener("pointerdown", function (e) {
-      if (e.target.tagName === "BUTTON") return
+      if (e.target.closest && e.target.closest("button")) return
       dragging = true
       bar.classList.add("dragging")
       var rect = host.getBoundingClientRect()
@@ -375,11 +428,37 @@ export const PICKER_INIT_SCRIPT = `(() => {
     bar.addEventListener("pointercancel", stopDrag)
 
     root.getElementById("pick").addEventListener("click", function () {
+      closeCompose()
       setMode(!active)
     })
     root.getElementById("shot").addEventListener("click", function () {
       if (selecting) stopSelect()
       else startSelect()
+    })
+    root.getElementById("view").addEventListener("click", function () {
+      bridge(MOBILE, !mobile)
+    })
+    function closeCompose() {
+      picked = null
+      selected = null
+      form.classList.add("hidden")
+      highlight(null)
+    }
+    window.addEventListener("scroll", positionCompose, true)
+    window.addEventListener("resize", positionCompose)
+    root.getElementById("cancel").addEventListener("click", closeCompose)
+    root.getElementById("attach").addEventListener("click", function () {
+      if (!picked) return
+      picked.request = root.getElementById("change").value.trim()
+      bridge(PICK, picked)
+      closeCompose()
+    })
+    root.getElementById("change").addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeCompose()
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault()
+        root.getElementById("attach").click()
+      }
     })
     root.getElementById("min").addEventListener("click", function () {
       bar.classList.add("hidden")

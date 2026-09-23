@@ -265,7 +265,11 @@ export async function activate(context: vscode.ExtensionContext) {
   const browserPreview = new PlaywrightBrowserService()
   browserPreview.onElementPicked = (element) => {
     void (async () => {
-      const payload = { label: formatElementLabel(element), text: formatElementContext(element) }
+      const payload = {
+        label: formatElementLabel(element),
+        text: formatElementContext(element),
+        request: element.request,
+      }
       if (await attachElementToChat(chatSurfaces(), payload)) return
       // No chat surface is open yet: reveal the sidebar chat and attach there.
       await vscode.commands.executeCommand("babel-code.SidebarProvider.focus")

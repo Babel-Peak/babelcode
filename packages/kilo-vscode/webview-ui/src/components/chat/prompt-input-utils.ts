@@ -20,6 +20,10 @@ export function browserElementToken(b: BrowserElement): string {
   return `[el:${b.label}]`
 }
 
+export function browserElementDraft(b: BrowserElement, request?: string): string {
+  return request?.trim() ? `${request.trim()} ${browserElementToken(b)}` : browserElementToken(b)
+}
+
 export function isInlineContextToken(token: string): boolean {
   return token.startsWith("[file:") || token.startsWith("[el:")
 }
@@ -46,7 +50,7 @@ export function buildPromptMessage(
   for (const b of browserElements) {
     const token = browserElementToken(b)
     if (message.includes(token)) {
-      message = message.split(token).join(`\n\n${b.text}\n\n`)
+      message = message.replace(token, `\n\n${b.text}\n\n`)
     }
   }
 
@@ -237,10 +241,12 @@ export function insertSpacedText(
   value: string,
   start: number,
   end: number,
+  lineBreak = false,
 ): { text: string; pos: number } {
   const before = text.slice(0, start)
   const after = text.slice(end)
-  const prefix = before && !/\s$/.test(before) ? " " : ""
+  const prefix =
+    lineBreak && before.trim() ? (before.endsWith("\n") ? "" : "\n") : before && !/\s$/.test(before) ? " " : ""
   const suffix = after && !/^\s/.test(after) ? " " : ""
   const inserted = `${prefix}${value}${suffix}`
   return {

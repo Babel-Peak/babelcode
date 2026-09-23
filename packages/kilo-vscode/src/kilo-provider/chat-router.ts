@@ -9,6 +9,7 @@ export interface FileContext {
 export interface BrowserElementContext {
   label: string
   text: string
+  request?: string
 }
 
 /** A captured image: attached to the prompt as an image attachment. */

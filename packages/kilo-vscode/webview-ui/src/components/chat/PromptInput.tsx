@@ -58,6 +58,7 @@ import {
   isInlineContextToken,
   codeContextToken,
   browserElementToken,
+  browserElementDraft,
   applySandboxStates,
   memoryRest,
   buildPromptMessage,
@@ -794,12 +795,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     return true
   }
 
-  const insertTokenAtCursor = (token: string) => {
+  const insertTokenAtCursor = (token: string, lineBreak = false) => {
     const textarea = textareaRef
     const current = text()
     const start = textarea?.selectionStart ?? current.length
     const end = textarea?.selectionEnd ?? start
-    const result = insertSpacedText(current, token, start, end)
+    const result = insertSpacedText(current, token, start, end, lineBreak)
     setText(result.text)
     if (textarea) {
       textarea.value = result.text
@@ -827,7 +828,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (message.type !== "addBrowserElement") return
     const item = { id: crypto.randomUUID(), label: message.label, text: message.text }
     browserEls.add(item)
-    insertTokenAtCursor(browserElementToken(item))
+    insertTokenAtCursor(browserElementDraft(item, message.request), !!message.request?.trim())
   }
 
   const applyImage = (message: ExtensionMessage) => {

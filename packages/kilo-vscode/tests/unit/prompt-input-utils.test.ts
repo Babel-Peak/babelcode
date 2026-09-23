@@ -14,6 +14,7 @@ import {
   isInlineContextToken,
   codeContextToken,
   browserElementToken,
+  browserElementDraft,
   formatCodeContext,
   buildPromptMessage,
   applySandboxState,
@@ -276,6 +277,21 @@ describe("insertSpacedText", () => {
     expect(insertSpacedText("world", "hello", 0, 0)).toEqual({ text: "hello world", pos: 6 })
     expect(insertSpacedText("hello", "world", 5, 5)).toEqual({ text: "hello world", pos: 11 })
   })
+
+  it("starts a browser change request on a new line only after existing text", () => {
+    const element = { id: "1", label: "button", text: "DOM Path: button" }
+    const request = browserElementDraft(element, "Make it larger")
+    expect(insertSpacedText("Existing message", request, 16, 16, true).text).toBe(
+      "Existing message\nMake it larger [el:button]",
+    )
+    expect(insertSpacedText("Existing message\n", request, 17, 17, true).text).toBe(
+      "Existing message\nMake it larger [el:button]",
+    )
+    expect(insertSpacedText("", request, 0, 0, true).text).toBe("Make it larger [el:button]")
+    expect(insertSpacedText("Existing message", browserElementDraft(element), 16, 16).text).toBe(
+      "Existing message [el:button]",
+    )
+  })
 })
 
 describe("isSuggesting", () => {
@@ -400,6 +416,15 @@ describe("codeContextToken & browserElementToken", () => {
     expect(token).toBe("[el:img.floating_element]")
   })
 
+  it("shows the requested change beside the element token in the chat draft", () => {
+    const element = { id: "1", label: "button", text: "DOM Path: header > button" }
+    expect(browserElementDraft(element, " Make it larger ")).toBe("Make it larger [el:button]")
+    expect(browserElementDraft(element)).toBe("[el:button]")
+    expect(buildPromptMessage(browserElementDraft(element, "Make it larger"), [], "", [element])).toBe(
+      "Make it larger \n\nDOM Path: header > button",
+    )
+  })
+
   it("identifies inline context tokens", () => {
     expect(isInlineContextToken("[file:PromptInput.tsx:10-20]")).toBe(true)
     expect(isInlineContextToken("[el:img.floating_element]")).toBe(true)
@@ -446,6 +471,16 @@ describe("buildPromptMessage with inline tokens", () => {
     const draft = "[el:img.floating_element]"
     const result = buildPromptMessage(draft, [], "", [elItem])
     expect(result).toBe("Attached Element Context from Browser Preview\nElement: img.floating_element")
+  })
+
+  it("expands repeated element types using each selection's own context", () => {
+    const elements = [
+      { id: "1", label: "button", text: "DOM Path: header > button" },
+      { id: "2", label: "button", text: "DOM Path: footer > button" },
+    ]
+    expect(buildPromptMessage("[el:button] then [el:button]", [], "", elements)).toBe(
+      "DOM Path: header > button\n\n then \n\nDOM Path: footer > button",
+    )
   })
 
   it("omits tokens that were deleted from the draft", () => {

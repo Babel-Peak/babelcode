@@ -357,6 +357,7 @@ export interface AddBrowserElementMessage {
   type: "addBrowserElement"
   label: string
   text: string
+  request?: string
 }
 
 /** Captured browser screenshot attached as a prompt image. */

@@ -76,9 +76,13 @@ export const registerAutocompleteProvider = async (
 
   // Register AutocompleteServiceManager Code Actions
   context.subscriptions.push(
-    vscode.languages.registerCodeActionsProvider("*", autocompleteManager.codeActionProvider, {
-      providedCodeActionKinds: Object.values(autocompleteManager.codeActionProvider.providedCodeActionKinds),
-    }),
+    vscode.languages.registerCodeActionsProvider(
+      [{ scheme: "file" }, { scheme: "vscode-notebook-cell" }],
+      autocompleteManager.codeActionProvider,
+      {
+        providedCodeActionKinds: Object.values(autocompleteManager.codeActionProvider.providedCodeActionKinds),
+      },
+    ),
   )
 
   // Re-load when autocomplete settings change (e.g. toggled from webview or VS Code settings UI).

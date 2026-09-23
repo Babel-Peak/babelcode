@@ -24,6 +24,7 @@ export interface PickedElement {
   innerText: string
   computedStyle: Record<string, string>
   dimensions: { top: number; left: number; width: number; height: number }
+  request?: string
 }
 
 /** A screenshot of a user-selected page area, ready for the chat prompt. */
@@ -57,6 +58,7 @@ interface TargetInfo {
 const PICK_BRIDGE = "__kiloPickElement"
 const STATE_BRIDGE = "__kiloPickerState"
 const SCREEN_BRIDGE = "__kiloScreenshotArea"
+const MOBILE_BRIDGE = "__kiloMobileMode"
 
 // playwright-core ships no browsers; launch the user's installed browser.
 const CHANNELS = ["chrome", "msedge"] as const
@@ -93,6 +95,8 @@ export class PlaywrightBrowserService implements vscode.Disposable {
   private pageSessions = new Map<string, string>()
   // targetId -> chat session id for pages this extension opened.
   private targetSids = new Map<string, string>()
+  private mobileTargets = new Set<string>()
+  private userAgents = new Map<string, string>()
   // targetId -> in-flight picker wiring, awaited before first navigation.
   private wiredTargets = new Map<string, Promise<void>>()
   private pending = new Map<number, { resolve: (msg: TargetMessage) => void; reject: (err: Error) => void }>()
@@ -152,6 +156,8 @@ export class PlaywrightBrowserService implements vscode.Disposable {
     this.cdp = null
     this.pageSessions.clear()
     this.targetSids.clear()
+    this.mobileTargets.clear()
+    this.userAgents.clear()
     this.wiredTargets.clear()
     const browser = this.browser
     this.browser = null
@@ -205,6 +211,8 @@ export class PlaywrightBrowserService implements vscode.Disposable {
     this.cdp = null
     this.pageSessions.clear()
     this.targetSids.clear()
+    this.mobileTargets.clear()
+    this.userAgents.clear()
     this.wiredTargets.clear()
     this.pages.clear()
     this.onBrowserClosed?.()
@@ -262,6 +270,8 @@ export class PlaywrightBrowserService implements vscode.Disposable {
     client.on("Target.targetDestroyed", (p: { targetId: string }) => {
       this.pageSessions.delete(p.targetId)
       this.targetSids.delete(p.targetId)
+      this.mobileTargets.delete(p.targetId)
+      this.userAgents.delete(p.targetId)
       this.wiredTargets.delete(p.targetId)
     })
     client.on("Target.receivedMessageFromTarget", (p: { sessionId: string; message: string }) => {
@@ -292,7 +302,7 @@ export class PlaywrightBrowserService implements vscode.Disposable {
     await this.pageCall(sessionId, "Page.enable")
     await this.pageCall(sessionId, "Runtime.enable")
     await this.pageCall(sessionId, "Page.addScriptToEvaluateOnNewDocument", { source: PICKER_INIT_SCRIPT })
-    for (const name of [PICK_BRIDGE, STATE_BRIDGE, SCREEN_BRIDGE]) {
+    for (const name of [PICK_BRIDGE, STATE_BRIDGE, SCREEN_BRIDGE, MOBILE_BRIDGE]) {
       await this.pageCall(sessionId, "Runtime.addBinding", { name })
     }
     // The target may already have a document (created by another CDP client
@@ -323,6 +333,14 @@ export class PlaywrightBrowserService implements vscode.Disposable {
         this.onBridge(sessionId, params.name, params.payload)
       }
     }
+    if (msg.method === "Page.domContentEventFired") {
+      const target = this.targetForSession(sessionId)
+      if (target && this.mobileTargets.has(target)) {
+        void this.pageCall(sessionId, "Runtime.evaluate", { expression: "window.__kiloSetMobileMode?.(true)" }).catch(
+          (err) => console.warn("[Kilo New] Browser preview could not sync mobile icon:", err),
+        )
+      }
+    }
   }
 
   private onBridge(sessionId: string, name: string, payload: string): void {
@@ -340,6 +358,13 @@ export class PlaywrightBrowserService implements vscode.Disposable {
       console.log(`[Kilo New] Browser preview picker ${payload === "true" ? "active" : "inactive"}`)
       return
     }
+    if (name === MOBILE_BRIDGE) {
+      void this.switchDevice(sessionId, targetId, payload === "true").catch((err) => {
+        console.warn("[Kilo New] Browser preview could not change device:", err)
+        void vscode.window.showWarningMessage("Browser preview could not change the device.")
+      })
+      return
+    }
     if (name === SCREEN_BRIDGE) {
       try {
         const area = JSON.parse(payload) as ShotArea
@@ -348,6 +373,42 @@ export class PlaywrightBrowserService implements vscode.Disposable {
         console.warn("[Kilo New] Browser preview invalid capture payload:", err)
       }
     }
+  }
+
+  private async switchDevice(sessionId: string, target: string, mobile: boolean): Promise<void> {
+    if (mobile) {
+      const device = loadPlaywright().devices["iPhone 13"]
+      const reply = await this.pageRequest(sessionId, {
+        method: "Runtime.evaluate",
+        params: { expression: "navigator.userAgent", returnByValue: true },
+      })
+      const agent = (reply.result?.result as { value?: string } | undefined)?.value
+      if (agent) this.userAgents.set(target, agent)
+      await this.pageCall(sessionId, "Network.enable")
+      await this.pageCall(sessionId, "Network.setUserAgentOverride", { userAgent: device.userAgent })
+      await this.pageCall(sessionId, "Emulation.setDeviceMetricsOverride", {
+        width: device.viewport.width,
+        height: device.viewport.height,
+        screenWidth: device.viewport.width,
+        screenHeight: device.viewport.height,
+        deviceScaleFactor: device.deviceScaleFactor,
+        mobile: device.isMobile,
+        screenOrientation: { type: "portraitPrimary", angle: 0 },
+      })
+      await this.pageCall(sessionId, "Emulation.setTouchEmulationEnabled", {
+        enabled: device.hasTouch,
+        maxTouchPoints: 1,
+      })
+      this.mobileTargets.add(target)
+      await this.pageCall(sessionId, "Runtime.evaluate", { expression: "window.__kiloSetMobileMode?.(true)" })
+      return
+    }
+    await this.pageCall(sessionId, "Emulation.setTouchEmulationEnabled", { enabled: false })
+    await this.pageCall(sessionId, "Emulation.clearDeviceMetricsOverride")
+    await this.pageCall(sessionId, "Network.setUserAgentOverride", { userAgent: this.userAgents.get(target) ?? "" })
+    this.mobileTargets.delete(target)
+    this.userAgents.delete(target)
+    await this.pageCall(sessionId, "Runtime.evaluate", { expression: "window.__kiloSetMobileMode?.(false)" })
   }
 
   private targetForSession(sessionId: string): string | undefined {
@@ -439,8 +500,7 @@ export class PlaywrightBrowserService implements vscode.Disposable {
   /** Map a page we opened to its chat session id; returns its CDP target id. */
   private async rememberSid(page: Page, sid: string): Promise<string | undefined> {
     try {
-      const session = await this.context?.newCDPSession(page)
-      if (!session) return undefined
+      const session = await page.context().newCDPSession(page)
       const { targetInfo } = await session.send("Target.getTargetInfo")
       this.targetSids.set(targetInfo.targetId, sid)
       await session.detach().catch(() => {})
