@@ -216,4 +216,19 @@ describe("registerCodeActions", () => {
       },
     ])
   })
+
+  it("falls back to text mention when adding a binary file via addFileToContext", async () => {
+    const state = setup()
+    api.workspace.fs.readFile = (async () => new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01])) as never
+    const uri = vscode.Uri.file("/repo/docs/spec.docx")
+
+    await state.commands.get("babel-code.new.addFileToContext")?.(uri)
+
+    expect(state.posts).toEqual([
+      {
+        type: "appendChatBoxMessage",
+        text: "@docs/spec.docx ",
+      },
+    ])
+  })
 })

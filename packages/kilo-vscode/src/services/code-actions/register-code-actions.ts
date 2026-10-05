@@ -115,6 +115,11 @@ export function registerCodeActions(
               continue
             }
             const bytes = await vscode.workspace.fs.readFile(u)
+            // Binary files (docx, pdf, images...) would pollute the chat as garbage text; cite the path instead.
+            if (bytes.subarray(0, 8000).includes(0)) {
+              view.postMessage({ type: "appendChatBoxMessage", text: `@${rel} ` })
+              continue
+            }
             const text = new TextDecoder().decode(bytes)
             const lines = text.split("\n").length
             view.postMessage({
