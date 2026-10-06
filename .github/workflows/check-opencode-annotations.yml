@@ -18,7 +18,7 @@ jobs:
   check-annotations:
     name: Check kilocode_change annotations
     if: github.repository == 'Babel-Peak/babelcode'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v6 # kilocode_change
         with:

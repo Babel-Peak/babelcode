@@ -12,7 +12,7 @@ permissions:
 jobs:
   check-paths:
     name: Check changed paths
-    runs-on: ubuntu-latest # kilocode_change
+    runs-on: blacksmith-4vcpu-ubuntu-2404 # kilocode_change
     outputs:
       matched: ${{ steps.filter.outputs.matched }}
       can_autocommit: ${{ steps.autocommit-check.outputs.can_autocommit }}
